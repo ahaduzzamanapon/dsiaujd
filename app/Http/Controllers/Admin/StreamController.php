@@ -34,8 +34,9 @@ class StreamController extends Controller
 
         $streams = $query->paginate(15)->withQueryString();
         $categories = Category::orderBy('order')->get();
+        $allStreamsForMerge = Stream::select('id', 'name')->orderBy('name')->get();
 
-        return view('admin.streams.index', compact('streams', 'categories'));
+        return view('admin.streams.index', compact('streams', 'categories', 'allStreamsForMerge'));
     }
 
     /**
@@ -246,5 +247,80 @@ class StreamController extends Controller
             return redirect()->route('admin.streams.index')->with('success', 'Selected streams deleted successfully.');
         }
         return redirect()->route('admin.streams.index')->with('error', 'No streams selected for deletion.');
+    }
+
+    /**
+     * Merge selected streams into a new single stream and delete the originals.
+     */
+    public function merge(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        $newName = $request->input('new_name');
+
+        if (empty($ids) || count($ids) < 2) {
+            return redirect()->route('admin.streams.index')->with('error', 'At least two channels must be selected to merge.');
+        }
+
+        if (empty($newName)) {
+            return redirect()->route('admin.streams.index')->with('error', 'A new channel name is required.');
+        }
+
+        // Fetch streams with servers and categories
+        $streams = Stream::with(['servers', 'categories'])->whereIn('id', $ids)->get();
+
+        if ($streams->isEmpty()) {
+            return redirect()->route('admin.streams.index')->with('error', 'Selected channels could not be found.');
+        }
+
+        // Use the first stream as the base for logos, categories, sport type, etc.
+        $base = $streams->first();
+
+        // Create the new merged Stream
+        $mergedStream = Stream::create([
+            'name' => $newName,
+            'logo' => $base->logo,
+            'sport_type' => $base->sport_type,
+            'team1_name' => $base->team1_name,
+            'team1_logo' => $base->team1_logo,
+            'team2_name' => $base->team2_name,
+            'team2_logo' => $base->team2_logo,
+            'is_permanent' => $base->is_permanent,
+            'start_time' => $base->start_time,
+            'expire_time' => $base->expire_time,
+            'show_in_events' => $base->show_in_events,
+            'show_in_sports' => $base->show_in_sports,
+            'show_in_tv' => $base->show_in_tv,
+            'is_active' => true, // Active by default
+        ]);
+
+        // Merge categories
+        $categoryIds = $streams->flatMap->categories->pluck('id')->unique()->toArray();
+        if (!empty($categoryIds)) {
+            $mergedStream->categories()->sync($categoryIds);
+        }
+
+        // Copy servers with prefixing
+        $serverOrder = 0;
+        foreach ($streams as $stream) {
+            foreach ($stream->servers as $server) {
+                // Prefix server name with parent stream name to preserve context
+                $serverName = $stream->name . ' - ' . $server->name;
+                
+                StreamServer::create([
+                    'stream_id' => $mergedStream->id,
+                    'name' => $serverName,
+                    'stream_type' => $server->stream_type,
+                    'url' => $server->url,
+                    'http_referer' => $server->http_referer,
+                    'http_origin' => $server->http_origin,
+                    'order' => $serverOrder++,
+                ]);
+            }
+        }
+
+        // Delete the original streams (cascades and deletes original servers and pivots)
+        Stream::whereIn('id', $ids)->delete();
+
+        return redirect()->route('admin.streams.index')->with('success', "Successfully merged " . $streams->count() . " channels into '{$newName}'.");
     }
 }

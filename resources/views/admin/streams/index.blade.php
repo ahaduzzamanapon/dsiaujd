@@ -49,7 +49,7 @@
             @endif
         </form>
 
-        <!-- Bulk Action Form and Button -->
+        <!-- Bulk Action Form and Buttons -->
         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
             <form id="bulk-delete-form" action="{{ route('admin.streams.bulk-delete') }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete the selected streams?');">
                 @csrf
@@ -60,6 +60,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 <span>Delete Selected (<span id="selected-count">0</span>)</span>
+            </button>
+            <button type="button" id="bulk-merge-btn" onclick="openMergeModal()" disabled 
+                    class="py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gray-900 border border-gray-800 hover:bg-gray-800 hover:border-gray-700 disabled:bg-gray-950 disabled:text-gray-600 disabled:border-gray-900 disabled:cursor-not-allowed transition-all flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span>Merge Selected (<span id="merge-count">0</span>)</span>
             </button>
         </div>
     </div>
@@ -173,20 +180,118 @@
         </div>
     @endif
 </div>
+
+<!-- Merge Channels Modal Overlay -->
+<div id="merge-modal" class="fixed inset-0 bg-gray-950/85 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="glass-panel w-full max-w-lg p-6 rounded-3xl border border-gray-800 shadow-2xl mx-4 relative">
+        <div class="flex items-center justify-between mb-6 pb-3 border-b border-gray-800">
+            <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <h3 class="text-lg font-bold text-white">Channel Merger</h3>
+            </div>
+            <button type="button" onclick="closeMergeModal()" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="merge-channels-form" action="{{ route('admin.streams.merge') }}" method="POST" class="space-y-6">
+            @csrf
+            <!-- Container for hidden inputs representing selected IDs -->
+            <div id="merge-ids-inputs"></div>
+
+            <!-- New Name input -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Merged Channel Name</label>
+                <input type="text" name="new_name" placeholder="e.g. Sony Sports Combined" required
+                       class="w-full bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all">
+            </div>
+
+            <!-- Search bar to search and add more streams inside modal -->
+            <div class="relative">
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Search & Add More Channels</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </span>
+                    <input type="text" id="modal-search-input" placeholder="Search other channels by name..." autocomplete="off"
+                           class="w-full bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all">
+                </div>
+                <!-- Search Suggestions -->
+                <div id="modal-search-suggestions" class="hidden absolute bg-gray-950/95 border border-gray-800 rounded-xl max-h-40 overflow-y-auto z-50 w-full mt-1.5 shadow-xl divide-y divide-gray-900"></div>
+            </div>
+
+            <!-- List of selected channels -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Selected Channels to Combine (<span id="modal-selected-count">0</span>)</label>
+                <div id="modal-selected-list" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto bg-gray-950/40 p-3 rounded-xl border border-gray-850">
+                    <!-- Badges will render here -->
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-800">
+                <button type="button" onclick="closeMergeModal()" class="py-2 px-4 rounded-xl text-xs font-semibold text-gray-400 hover:text-white transition-all">
+                    Cancel
+                </button>
+                <button type="submit" class="py-2.5 px-6 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/15 transition-all">
+                    Merge Channels
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
+    // All channels in the database for the merger search feature
+    const allChannelsList = {!! json_encode($allStreamsForMerge->map(fn($s) => ['id' => $s->id, 'name' => $s->name])->toArray()) !!};
+    
+    // In-memory state of streams currently chosen for merging
+    let selectedMergeStreams = [];
+
     document.addEventListener('DOMContentLoaded', function() {
         const selectAll = document.getElementById('select-all');
         const checkboxes = document.querySelectorAll('.stream-checkbox');
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        const bulkMergeBtn = document.getElementById('bulk-merge-btn');
         const selectedCountSpan = document.getElementById('selected-count');
+        const mergeCountSpan = document.getElementById('merge-count');
+        
+        // Modal elements
+        const modalSearchInput = document.getElementById('modal-search-input');
+        const suggestionsContainer = document.getElementById('modal-search-suggestions');
 
-        function updateBulkButtonState() {
-            const checkedCount = document.querySelectorAll('.stream-checkbox:checked').length;
+        // Functions to maintain state
+        function syncSelectionFromTable() {
+            selectedMergeStreams = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const row = cb.closest('tr');
+                    // Extract channel name from row layout
+                    const nameSpan = row.querySelector('.font-medium.text-white');
+                    const name = nameSpan ? nameSpan.textContent.trim() : 'Unnamed Stream';
+                    selectedMergeStreams.push({
+                        id: parseInt(cb.value),
+                        name: name
+                    });
+                }
+            });
+            updateButtonsState();
+        }
+
+        function updateButtonsState() {
+            const checkedCount = selectedMergeStreams.length;
             selectedCountSpan.textContent = checkedCount;
+            mergeCountSpan.textContent = checkedCount;
             
+            // Toggle Delete Button
             if (checkedCount > 0) {
                 bulkDeleteBtn.disabled = false;
                 bulkDeleteBtn.classList.remove('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
@@ -196,14 +301,26 @@
                 bulkDeleteBtn.classList.add('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
                 bulkDeleteBtn.classList.remove('bg-red-600', 'hover:bg-red-500', 'border-transparent');
             }
+
+            // Toggle Merge Button (Requires at least 2 channels to combine)
+            if (checkedCount >= 2) {
+                bulkMergeBtn.disabled = false;
+                bulkMergeBtn.classList.remove('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+                bulkMergeBtn.classList.add('bg-gradient-to-r', 'from-cyan-500', 'to-blue-600', 'border-transparent', 'hover:from-cyan-400', 'hover:to-blue-500');
+            } else {
+                bulkMergeBtn.disabled = true;
+                bulkMergeBtn.classList.add('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+                bulkMergeBtn.classList.remove('bg-gradient-to-r', 'from-cyan-500', 'to-blue-600', 'border-transparent', 'hover:from-cyan-400', 'hover:to-blue-500');
+            }
         }
 
+        // Checkbox events
         if (selectAll) {
             selectAll.addEventListener('change', function() {
                 checkboxes.forEach(cb => {
                     cb.checked = selectAll.checked;
                 });
-                updateBulkButtonState();
+                syncSelectionFromTable();
             });
         }
 
@@ -215,10 +332,158 @@
                 if (selectAll && document.querySelectorAll('.stream-checkbox:checked').length === checkboxes.length) {
                     selectAll.checked = true;
                 }
-                updateBulkButtonState();
+                syncSelectionFromTable();
             });
         });
+
+        // Search features inside the Modal
+        if (modalSearchInput) {
+            modalSearchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                if (query.length < 1) {
+                    suggestionsContainer.classList.add('hidden');
+                    return;
+                }
+
+                // Filter matching streams not already selected
+                const matches = allChannelsList.filter(ch => {
+                    const matchesQuery = ch.name.toLowerCase().includes(query);
+                    const isAlreadySelected = selectedMergeStreams.some(selected => selected.id === ch.id);
+                    return matchesQuery && !isAlreadySelected;
+                });
+
+                if (matches.length > 0) {
+                    suggestionsContainer.innerHTML = '';
+                    matches.slice(0, 10).forEach(match => {
+                        const item = document.createElement('div');
+                        item.className = 'px-4 py-2.5 text-xs text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 cursor-pointer transition-colors';
+                        item.textContent = match.name;
+                        item.addEventListener('click', function() {
+                            addChannelToMerge(match.id, match.name);
+                            modalSearchInput.value = '';
+                            suggestionsContainer.classList.add('hidden');
+                        });
+                        suggestionsContainer.appendChild(item);
+                    });
+                    suggestionsContainer.classList.remove('hidden');
+                } else {
+                    suggestionsContainer.innerHTML = '<div class="px-4 py-2.5 text-xs text-gray-500">No matching channels found</div>';
+                    suggestionsContainer.classList.remove('hidden');
+                }
+            });
+
+            // Close suggestions dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!modalSearchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+        }
     });
+
+    // Helper functions to manage modal state
+    function addChannelToMerge(id, name) {
+        if (!selectedMergeStreams.some(ch => ch.id === id)) {
+            selectedMergeStreams.push({ id, name });
+            
+            // Also check the row on the main table if visible on the page
+            const tableCheckbox = document.querySelector(`.stream-checkbox[value="${id}"]`);
+            if (tableCheckbox) {
+                tableCheckbox.checked = true;
+            }
+            
+            renderModalSelectedList();
+        }
+    }
+
+    function removeChannelFromMerge(id) {
+        selectedMergeStreams = selectedMergeStreams.filter(ch => ch.id !== id);
+        
+        // Uncheck on the main table
+        const tableCheckbox = document.querySelector(`.stream-checkbox[value="${id}"]`);
+        if (tableCheckbox) {
+            tableCheckbox.checked = false;
+        }
+        
+        // If select all was checked, uncheck it since we removed an item
+        const selectAll = document.getElementById('select-all');
+        if (selectAll) {
+            selectAll.checked = false;
+        }
+
+        renderModalSelectedList();
+    }
+
+    function renderModalSelectedList() {
+        const listContainer = document.getElementById('modal-selected-list');
+        const inputsContainer = document.getElementById('merge-ids-inputs');
+        const modalCountSpan = document.getElementById('modal-selected-count');
+        const mergeCountSpan = document.getElementById('merge-count');
+        const selectedCountSpan = document.getElementById('selected-count');
+        
+        listContainer.innerHTML = '';
+        inputsContainer.innerHTML = '';
+
+        modalCountSpan.textContent = selectedMergeStreams.length;
+        selectedCountSpan.textContent = selectedMergeStreams.length;
+        mergeCountSpan.textContent = selectedMergeStreams.length;
+
+        selectedMergeStreams.forEach(ch => {
+            // Render Badge HTML
+            const badge = document.createElement('div');
+            badge.className = 'inline-flex items-center space-x-1 px-2.5 py-1 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl text-xs font-medium';
+            badge.innerHTML = `
+                <span>${ch.name}</span>
+                <button type="button" onclick="removeChannelFromMerge(${ch.id})" class="text-cyan-500 hover:text-cyan-300 font-bold ml-1 focus:outline-none">&times;</button>
+            `;
+            listContainer.appendChild(badge);
+
+            // Append Hidden Form Input
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = ch.id;
+            inputsContainer.appendChild(input);
+        });
+
+        // Trigger dynamic button states updates on the main table page
+        const bulkMergeBtn = document.getElementById('bulk-merge-btn');
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+
+        if (selectedMergeStreams.length >= 2) {
+            bulkMergeBtn.disabled = false;
+            bulkMergeBtn.classList.remove('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+            bulkMergeBtn.classList.add('bg-gradient-to-r', 'from-cyan-500', 'to-blue-600', 'border-transparent', 'hover:from-cyan-400', 'hover:to-blue-500');
+        } else {
+            bulkMergeBtn.disabled = true;
+            bulkMergeBtn.classList.add('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+            bulkMergeBtn.classList.remove('bg-gradient-to-r', 'from-cyan-500', 'to-blue-600', 'border-transparent', 'hover:from-cyan-400', 'hover:to-blue-500');
+        }
+
+        if (selectedMergeStreams.length > 0) {
+            bulkDeleteBtn.disabled = false;
+            bulkDeleteBtn.classList.remove('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+            bulkDeleteBtn.classList.add('bg-red-600', 'hover:bg-red-500', 'border-transparent');
+        } else {
+            bulkDeleteBtn.disabled = true;
+            bulkDeleteBtn.classList.add('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+            bulkDeleteBtn.classList.remove('bg-red-600', 'hover:bg-red-500', 'border-transparent');
+        }
+    }
+
+    function openMergeModal() {
+        renderModalSelectedList();
+        
+        // Show Modal
+        document.getElementById('merge-modal').classList.remove('hidden');
+    }
+
+    function closeMergeModal() {
+        // Hide Modal
+        document.getElementById('merge-modal').classList.add('hidden');
+        document.getElementById('modal-search-input').value = '';
+        document.getElementById('modal-search-suggestions').classList.add('hidden');
+    }
 </script>
 @endpush
 

@@ -56,6 +56,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
 
     // Streams CRUD Resource
     Route::post('streams/bulk-delete', [StreamController::class, 'bulkDestroy'])->name('streams.bulk-delete');
+    Route::post('streams/merge', [StreamController::class, 'merge'])->name('streams.merge');
     Route::resource('streams', StreamController::class);
 
     // Sync Console Routes
