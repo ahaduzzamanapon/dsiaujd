@@ -82,7 +82,10 @@ class ApiController extends Controller
         $now = Carbon::now();
         $events = Stream::where('show_in_events', true)
             ->where('is_active', true)
-            ->where('expire_time', '>', $now)
+            ->where(function ($query) use ($now) {
+                $query->where('is_permanent', true)
+                      ->orWhere('expire_time', '>', $now);
+            })
             ->with(['servers' => function ($query) {
                 $query->orderBy('order');
             }])
