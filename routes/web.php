@@ -51,6 +51,10 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
+    // Promotional Alert Route
+    Route::get('/settings/promo-alert', [SettingController::class, 'editPromo'])->name('settings.promo.edit');
+    Route::post('/settings/promo-alert', [SettingController::class, 'updatePromo'])->name('settings.promo.update');
+
     // Categories CRUD Resource
     Route::resource('categories', CategoryController::class);
 

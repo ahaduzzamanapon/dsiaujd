@@ -30,7 +30,7 @@
                        class="w-full bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all">
             </div>
 
-            <!-- Category Select -->
+             <!-- Category Select -->
             <select name="category_id" onchange="this.form.submit()" class="bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all min-w-[150px] cursor-pointer">
                 <option value="">All Categories</option>
                 @foreach($categories as $category)
@@ -40,11 +40,19 @@
                 @endforeach
             </select>
 
+            <!-- Tab Filter -->
+            <select name="tab" onchange="this.form.submit()" class="bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all min-w-[150px] cursor-pointer">
+                <option value="">All Display Tabs</option>
+                <option value="events" {{ request('tab') == 'events' ? 'selected' : '' }}>Live Events Tab</option>
+                <option value="sports" {{ request('tab') == 'sports' ? 'selected' : '' }}>Sports Tab</option>
+                <option value="tv" {{ request('tab') == 'tv' ? 'selected' : '' }}>Live TV Tab</option>
+            </select>
+
             <button type="submit" class="py-2 px-4 rounded-xl font-semibold text-xs text-white bg-cyan-600 hover:bg-cyan-500 transition-all">
                 Search
             </button>
 
-            @if(request('category_id') || request('search'))
+            @if(request('category_id') || request('search') || request('tab'))
                 <a href="{{ route('admin.streams.index') }}" class="text-xs text-gray-400 hover:text-white transition-colors whitespace-nowrap">Clear All</a>
             @endif
         </form>
@@ -60,6 +68,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 <span>Delete Selected (<span id="selected-count">0</span>)</span>
+            </button>
+            <button type="button" id="bulk-create-btn" onclick="redirectToCreateWithSelected()" disabled 
+                    class="py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gray-900 border border-gray-800 hover:bg-gray-800 hover:border-gray-700 disabled:bg-gray-950 disabled:text-gray-600 disabled:border-gray-900 disabled:cursor-not-allowed transition-all flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Create with Selected (<span id="create-count">0</span>)</span>
             </button>
             <button type="button" id="bulk-merge-btn" onclick="openMergeModal()" disabled 
                     class="py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gray-900 border border-gray-800 hover:bg-gray-800 hover:border-gray-700 disabled:bg-gray-950 disabled:text-gray-600 disabled:border-gray-900 disabled:cursor-not-allowed transition-all flex items-center gap-2">
@@ -210,6 +225,13 @@
                        class="w-full bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all">
             </div>
 
+            <!-- Optional Deletion -->
+            <div class="flex items-center space-x-3 bg-gray-950/40 p-3 rounded-xl border border-gray-800/40">
+                <input type="checkbox" name="delete_original" id="delete-original" value="1" checked
+                       class="rounded border-gray-800 bg-gray-950 text-cyan-500 focus:ring-cyan-500/20 w-4 h-4 cursor-pointer">
+                <label for="delete-original" class="text-xs text-gray-300 cursor-pointer select-none">Delete source channels after combining</label>
+            </div>
+
             <!-- Search bar to search and add more streams inside modal -->
             <div class="relative">
                 <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Search & Add More Channels</label>
@@ -261,8 +283,10 @@
         const checkboxes = document.querySelectorAll('.stream-checkbox');
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
         const bulkMergeBtn = document.getElementById('bulk-merge-btn');
+        const bulkCreateBtn = document.getElementById('bulk-create-btn');
         const selectedCountSpan = document.getElementById('selected-count');
         const mergeCountSpan = document.getElementById('merge-count');
+        const createCountSpan = document.getElementById('create-count');
         
         // Modal elements
         const modalSearchInput = document.getElementById('modal-search-input');
@@ -290,6 +314,7 @@
             const checkedCount = selectedMergeStreams.length;
             selectedCountSpan.textContent = checkedCount;
             mergeCountSpan.textContent = checkedCount;
+            createCountSpan.textContent = checkedCount;
             
             // Toggle Delete Button
             if (checkedCount > 0) {
@@ -300,6 +325,17 @@
                 bulkDeleteBtn.disabled = true;
                 bulkDeleteBtn.classList.add('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
                 bulkDeleteBtn.classList.remove('bg-red-600', 'hover:bg-red-500', 'border-transparent');
+            }
+
+            // Toggle Create with Selected Button
+            if (checkedCount > 0) {
+                bulkCreateBtn.disabled = false;
+                bulkCreateBtn.classList.remove('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+                bulkCreateBtn.classList.add('bg-gray-900', 'text-white', 'border-gray-800', 'hover:bg-gray-800');
+            } else {
+                bulkCreateBtn.disabled = true;
+                bulkCreateBtn.classList.add('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+                bulkCreateBtn.classList.remove('bg-gray-900', 'text-white', 'border-gray-800', 'hover:bg-gray-800');
             }
 
             // Toggle Merge Button (Requires at least 2 channels to combine)
@@ -419,6 +455,7 @@
         const inputsContainer = document.getElementById('merge-ids-inputs');
         const modalCountSpan = document.getElementById('modal-selected-count');
         const mergeCountSpan = document.getElementById('merge-count');
+        const createCountSpan = document.getElementById('create-count');
         const selectedCountSpan = document.getElementById('selected-count');
         
         listContainer.innerHTML = '';
@@ -427,6 +464,7 @@
         modalCountSpan.textContent = selectedMergeStreams.length;
         selectedCountSpan.textContent = selectedMergeStreams.length;
         mergeCountSpan.textContent = selectedMergeStreams.length;
+        createCountSpan.textContent = selectedMergeStreams.length;
 
         selectedMergeStreams.forEach(ch => {
             // Render Badge HTML
@@ -449,6 +487,7 @@
         // Trigger dynamic button states updates on the main table page
         const bulkMergeBtn = document.getElementById('bulk-merge-btn');
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        const bulkCreateBtn = document.getElementById('bulk-create-btn');
 
         if (selectedMergeStreams.length >= 2) {
             bulkMergeBtn.disabled = false;
@@ -461,14 +500,34 @@
         }
 
         if (selectedMergeStreams.length > 0) {
+            bulkCreateBtn.disabled = false;
+            bulkCreateBtn.classList.remove('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+            bulkCreateBtn.classList.add('bg-gray-900', 'text-white', 'border-gray-800', 'hover:bg-gray-800');
+            
             bulkDeleteBtn.disabled = false;
             bulkDeleteBtn.classList.remove('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
             bulkDeleteBtn.classList.add('bg-red-600', 'hover:bg-red-500', 'border-transparent');
         } else {
+            bulkCreateBtn.disabled = true;
+            bulkCreateBtn.classList.add('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
+            bulkCreateBtn.classList.remove('bg-gray-900', 'text-white', 'border-gray-800', 'hover:bg-gray-800');
+
             bulkDeleteBtn.disabled = true;
             bulkDeleteBtn.classList.add('bg-gray-950', 'text-gray-600', 'border-gray-900', 'disabled:cursor-not-allowed');
             bulkDeleteBtn.classList.remove('bg-red-600', 'hover:bg-red-500', 'border-transparent');
         }
+    }
+
+    function redirectToCreateWithSelected() {
+        const ids = selectedMergeStreams.map(ch => ch.id);
+        if (ids.length === 0) return;
+        
+        // Build query string
+        const params = new URLSearchParams();
+        ids.forEach(id => params.append('from_ids[]', id));
+        
+        // Redirect to create page
+        window.location.href = "{{ route('admin.streams.create') }}?" + params.toString();
     }
 
     function openMergeModal() {

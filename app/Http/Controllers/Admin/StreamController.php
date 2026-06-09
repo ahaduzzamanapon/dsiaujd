@@ -23,6 +23,16 @@ class StreamController extends Controller
             });
         }
 
+        if ($tab = $request->input('tab')) {
+            if ($tab === 'events') {
+                $query->where('show_in_events', true);
+            } elseif ($tab === 'sports') {
+                $query->where('show_in_sports', true);
+            } elseif ($tab === 'tv') {
+                $query->where('show_in_tv', true);
+            }
+        }
+
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
@@ -42,10 +52,29 @@ class StreamController extends Controller
     /**
      * Show the form for creating a new stream.
      */
-    public function create()
+    public function create(Request $request)
     {
         $categories = Category::orderBy('order')->get();
-        return view('admin.streams.create', compact('categories'));
+        
+        $prefilledServers = [];
+        if ($fromIds = $request->input('from_ids')) {
+            $streams = Stream::with('servers')->whereIn('id', $fromIds)->get();
+            $serverOrder = 0;
+            foreach ($streams as $stream) {
+                foreach ($stream->servers as $server) {
+                    $prefilledServers[] = [
+                        'name' => $stream->name . ' - ' . $server->name,
+                        'stream_type' => $server->stream_type,
+                        'url' => $server->url,
+                        'http_referer' => $server->http_referer,
+                        'http_origin' => $server->http_origin,
+                        'order' => $serverOrder++,
+                    ];
+                }
+            }
+        }
+
+        return view('admin.streams.create', compact('categories', 'prefilledServers'));
     }
 
     /**
@@ -318,9 +347,14 @@ class StreamController extends Controller
             }
         }
 
-        // Delete the original streams (cascades and deletes original servers and pivots)
-        Stream::whereIn('id', $ids)->delete();
+        // Delete the original streams conditionally (cascades and deletes original servers and pivots)
+        if ($request->boolean('delete_original', false)) {
+            Stream::whereIn('id', $ids)->delete();
+            $message = "Successfully merged " . $streams->count() . " channels into '{$newName}' and deleted the source channels.";
+        } else {
+            $message = "Successfully combined " . $streams->count() . " channels into a new channel '{$newName}' (original channels kept).";
+        }
 
-        return redirect()->route('admin.streams.index')->with('success', "Successfully merged " . $streams->count() . " channels into '{$newName}'.");
+        return redirect()->route('admin.streams.index')->with('success', $message);
     }
 }

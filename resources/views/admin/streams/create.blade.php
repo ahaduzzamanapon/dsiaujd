@@ -145,45 +145,85 @@
         </div>
 
         <div id="servers-container" class="space-y-4">
-            <!-- Row 1 (Default) -->
-            <div class="server-row p-4 bg-gray-950/35 border border-gray-800 rounded-2xl relative space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                    <div class="sm:col-span-3">
-                        <label class="text-xs text-gray-500 block mb-1">Server Name</label>
-                        <input type="text" name="servers[0][name]" value="Server 1" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
+            @forelse($prefilledServers ?? [] as $index => $prefServer)
+                <div class="server-row p-4 bg-gray-950/35 border border-gray-800 rounded-2xl relative space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                        <div class="sm:col-span-3">
+                            <label class="text-xs text-gray-500 block mb-1">Server Name</label>
+                            <input type="text" name="servers[{{ $index }}][name]" value="{{ $prefServer['name'] }}" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="text-xs text-gray-500 block mb-1">Type</label>
+                            <select name="servers[{{ $index }}][stream_type]" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
+                                <option value="iframe" {{ $prefServer['stream_type'] == 'iframe' ? 'selected' : '' }}>Iframe / Web</option>
+                                <option value="m3u8" {{ $prefServer['stream_type'] == 'm3u8' ? 'selected' : '' }}>M3U8 / HLS</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-5">
+                            <label class="text-xs text-gray-500 block mb-1">Streaming URL</label>
+                            <input type="text" name="servers[{{ $index }}][url]" value="{{ $prefServer['url'] }}" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs" placeholder="https://...">
+                        </div>
+                        <div class="sm:col-span-1">
+                            <label class="text-xs text-gray-500 block mb-1">Order</label>
+                            <input type="number" name="servers[{{ $index }}][order]" value="{{ $prefServer['order'] + 1 }}" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
+                        </div>
+                        <div class="sm:col-span-1 flex items-end justify-center">
+                            <button type="button" onclick="removeServerRow(this)" class="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
                     </div>
-                    <div class="sm:col-span-2">
-                        <label class="text-xs text-gray-500 block mb-1">Type</label>
-                        <select name="servers[0][stream_type]" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
-                            <option value="iframe">Iframe / Web</option>
-                            <option value="m3u8">M3U8 / HLS</option>
-                        </select>
-                    </div>
-                    <div class="sm:col-span-5">
-                        <label class="text-xs text-gray-500 block mb-1">Streaming URL</label>
-                        <input type="text" name="servers[0][url]" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs" placeholder="https://...">
-                    </div>
-                    <div class="sm:col-span-1">
-                        <label class="text-xs text-gray-500 block mb-1">Order</label>
-                        <input type="number" name="servers[0][order]" value="1" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
-                    </div>
-                    <div class="sm:col-span-1 flex items-end justify-center">
-                        <button type="button" onclick="removeServerRow(this)" class="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-800/40 pt-3">
+                        <div>
+                            <label class="text-[10px] text-gray-500 block mb-1">Custom Referer Header (Optional)</label>
+                            <input type="text" name="servers[{{ $index }}][http_referer]" value="{{ $prefServer['http_referer'] }}" class="w-full bg-gray-950/40 border border-gray-800/80 text-white rounded-xl px-3 py-1.5 outline-none text-xs" placeholder="e.g. https://executeandship.com/">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 block mb-1">Custom Origin Header (Optional)</label>
+                            <input type="text" name="servers[{{ $index }}][http_origin]" value="{{ $prefServer['http_origin'] }}" class="w-full bg-gray-950/40 border border-gray-800/80 text-white rounded-xl px-3 py-1.5 outline-none text-xs" placeholder="e.g. https://executeandship.com">
+                        </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-800/40 pt-3">
-                    <div>
-                        <label class="text-[10px] text-gray-500 block mb-1">Custom Referer Header (Optional)</label>
-                        <input type="text" name="servers[0][http_referer]" class="w-full bg-gray-950/40 border border-gray-800/80 text-white rounded-xl px-3 py-1.5 outline-none text-xs" placeholder="e.g. https://executeandship.com/">
+            @empty
+                <div class="server-row p-4 bg-gray-950/35 border border-gray-800 rounded-2xl relative space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                        <div class="sm:col-span-3">
+                            <label class="text-xs text-gray-500 block mb-1">Server Name</label>
+                            <input type="text" name="servers[0][name]" value="Server 1" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="text-xs text-gray-500 block mb-1">Type</label>
+                            <select name="servers[0][stream_type]" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
+                                <option value="iframe">Iframe / Web</option>
+                                <option value="m3u8">M3U8 / HLS</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-5">
+                            <label class="text-xs text-gray-500 block mb-1">Streaming URL</label>
+                            <input type="text" name="servers[0][url]" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs" placeholder="https://...">
+                        </div>
+                        <div class="sm:col-span-1">
+                            <label class="text-xs text-gray-500 block mb-1">Order</label>
+                            <input type="number" name="servers[0][order]" value="1" required class="w-full bg-gray-950/60 border border-gray-800 text-white rounded-xl px-3 py-2 outline-none text-xs">
+                        </div>
+                        <div class="sm:col-span-1 flex items-end justify-center">
+                            <button type="button" onclick="removeServerRow(this)" class="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 block mb-1">Custom Origin Header (Optional)</label>
-                        <input type="text" name="servers[0][http_origin]" class="w-full bg-gray-950/40 border border-gray-800/80 text-white rounded-xl px-3 py-1.5 outline-none text-xs" placeholder="e.g. https://executeandship.com">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-800/40 pt-3">
+                        <div>
+                            <label class="text-[10px] text-gray-500 block mb-1">Custom Referer Header (Optional)</label>
+                            <input type="text" name="servers[0][http_referer]" class="w-full bg-gray-950/40 border border-gray-800/80 text-white rounded-xl px-3 py-1.5 outline-none text-xs" placeholder="e.g. https://executeandship.com/">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 block mb-1">Custom Origin Header (Optional)</label>
+                            <input type="text" name="servers[0][http_origin]" class="w-full bg-gray-950/40 border border-gray-800/80 text-white rounded-xl px-3 py-1.5 outline-none text-xs" placeholder="e.g. https://executeandship.com">
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endforelse
         </div>
     </div>
 
@@ -200,7 +240,7 @@
 
 @push('scripts')
 <script>
-    let serverIndex = 1;
+    let serverIndex = {{ isset($prefilledServers) ? count($prefilledServers) : 1 }};
 
     function toggleExpirySection() {
         const isPermanent = document.getElementById('is_permanent').checked;

@@ -48,4 +48,52 @@ class SettingController extends Controller
 
         return redirect()->route('admin.settings.edit')->with('success', 'Settings updated successfully.');
     }
+
+    /**
+     * Show the promo alert settings form.
+     */
+    public function editPromo()
+    {
+        $settings = AppSetting::firstOrCreate(['id' => 1], [
+            'app_version' => '1.0.0',
+            'is_mandatory_update' => false,
+            'update_message' => 'Please update the app to the latest version.',
+            'update_url' => 'https://play.google.com/store',
+            'welcome_message' => '• Enjoy live events and TV streaming with the latest updates! •',
+            'promo_show_alert' => false,
+            'promo_title' => 'Join Telegram',
+            'promo_message' => 'Get the latest channel updates, schedule requests, and chat with community on Telegram!',
+            'promo_link' => 'https://t.me/AllTV',
+            'promo_close_text' => 'Close',
+            'promo_go_text' => 'Join Now',
+        ]);
+        
+        return view('admin.settings.promo', compact('settings'));
+    }
+
+    /**
+     * Update the promo alert settings.
+     */
+    public function updatePromo(Request $request)
+    {
+        $data = $request->validate([
+            'promo_title' => 'required|string|max:255',
+            'promo_message' => 'nullable|string|max:2000',
+            'promo_link' => 'required|url|max:1000',
+            'promo_close_text' => 'required|string|max:50',
+            'promo_go_text' => 'required|string|max:50',
+        ]);
+
+        $settings = AppSetting::firstOrCreate(['id' => 1]);
+        $settings->update([
+            'promo_show_alert' => $request->has('promo_show_alert'),
+            'promo_title' => $data['promo_title'],
+            'promo_message' => $data['promo_message'],
+            'promo_link' => $data['promo_link'],
+            'promo_close_text' => $data['promo_close_text'],
+            'promo_go_text' => $data['promo_go_text'],
+        ]);
+
+        return redirect()->route('admin.settings.promo.edit')->with('success', 'Promotional alert settings updated successfully.');
+    }
 }
