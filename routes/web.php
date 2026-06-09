@@ -55,5 +55,10 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
     Route::resource('categories', CategoryController::class);
 
     // Streams CRUD Resource
+    Route::post('streams/bulk-delete', [StreamController::class, 'bulkDestroy'])->name('streams.bulk-delete');
     Route::resource('streams', StreamController::class);
+
+    // Sync Console Routes
+    Route::get('sync', [DashboardController::class, 'syncConsole'])->name('sync.index');
+    Route::post('sync/run', [DashboardController::class, 'runSync'])->name('sync.run');
 });

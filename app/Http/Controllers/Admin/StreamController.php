@@ -13,10 +13,20 @@ class StreamController extends Controller
     /**
      * Display a listing of the streams.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $streams = Stream::with('categories')->orderBy('id', 'desc')->get();
-        return view('admin.streams.index', compact('streams'));
+        $query = Stream::with('categories')->orderBy('id', 'desc');
+
+        if ($categoryId = $request->input('category_id')) {
+            $query->whereHas('categories', function ($q) use ($categoryId) {
+                $q->where('categories.id', $categoryId);
+            });
+        }
+
+        $streams = $query->paginate(15)->withQueryString();
+        $categories = Category::orderBy('order')->get();
+
+        return view('admin.streams.index', compact('streams', 'categories'));
     }
 
     /**
@@ -214,5 +224,18 @@ class StreamController extends Controller
     {
         $stream->delete(); // Automatically cascades to category relations and stream servers
         return redirect()->route('admin.streams.index')->with('success', 'Stream deleted successfully.');
+    }
+
+    /**
+     * Bulk delete selected streams.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (!empty($ids)) {
+            Stream::whereIn('id', $ids)->delete();
+            return redirect()->route('admin.streams.index')->with('success', 'Selected streams deleted successfully.');
+        }
+        return redirect()->route('admin.streams.index')->with('error', 'No streams selected for deletion.');
     }
 }
