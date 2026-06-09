@@ -1,0 +1,268 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
+use App\Models\Category;
+use App\Models\Stream;
+use App\Models\StreamServer;
+
+class SyncM3uPlaylist extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'm3u:sync {url? : The URL of the M3U playlist}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Sync streams from an external M3U playlist, validating links and custom headers before importing';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle()
+    {
+        $url = $this->argument('url') ?? 'https://raw.githubusercontent.com/abusaeeidx/BDxTV/refs/heads/main/roar-zone-playlist.m3u';
+        
+        $this->info("Fetching M3U playlist from: {$url}");
+        
+        try {
+            $response = Http::get($url);
+            if (!$response->successful()) {
+                $this->error("Failed to download playlist. HTTP status: " . $response->status());
+                return 1;
+            }
+            $m3uContent = $response->body();
+        } catch (\Exception $e) {
+            $this->error("Error downloading M3U: " . $e->getMessage());
+            return 1;
+        }
+
+        $lines = explode("\n", $m3uContent);
+        $total = 0;
+        $imported = 0;
+        $skipped_duplicate = 0;
+        $skipped_offline = 0;
+
+        $currentStream = null;
+        $vlcOptions = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) {
+                continue;
+            }
+
+            if (str_starts_with($line, '#EXTINF:')) {
+                $logo = '';
+                $groupTitle = 'Other';
+                $streamName = 'Unnamed Stream';
+
+                if (preg_match('/tvg-logo="([^"]+)"/i', $line, $match)) {
+                    $logo = $match[1];
+                }
+                
+                if (preg_match('/group-title="([^"]+)"/i', $line, $match)) {
+                    $groupTitle = $match[1];
+                }
+                
+                $parts = explode(',', $line, 2);
+                if (count($parts) > 1) {
+                    $streamName = trim($parts[1]);
+                }
+
+                $currentStream = [
+                    'name' => $streamName,
+                    'logo' => $logo,
+                    'group_title' => $groupTitle,
+                ];
+            } elseif (str_starts_with($line, '#EXTVLCOPT:')) {
+                $opt = substr($line, 11);
+                $parts = explode('=', $opt, 2);
+                if (count($parts) === 2) {
+                    $key = trim($parts[0]);
+                    $val = trim($parts[1]);
+                    $vlcOptions[$key] = $val;
+                }
+            } elseif (str_starts_with($line, 'http')) {
+                if ($currentStream) {
+                    $currentStream['url'] = $line;
+                    $currentStream['referer'] = $vlcOptions['http-referrer'] ?? $vlcOptions['referrer'] ?? null;
+                    $currentStream['origin'] = $vlcOptions['http-origin'] ?? $vlcOptions['origin'] ?? null;
+                    $total++;
+                    
+                    $this->info("Processing [{$total}]: {$currentStream['name']}");
+                    
+                    $result = $this->syncStream($currentStream);
+                    
+                    if ($result === 'duplicate') {
+                        $skipped_duplicate++;
+                        $this->line("  -> Already exists. Skipped.");
+                    } elseif ($result === 'offline') {
+                        $skipped_offline++;
+                        $this->warn("  -> Link is down. Skipped.");
+                    } elseif ($result === 'imported') {
+                        $imported++;
+                        $this->info("  -> Sync successful!");
+                    }
+                    
+                    $currentStream = null;
+                    $vlcOptions = []; // reset options after processing URL
+                }
+            }
+        }
+
+        $this->info("----------------------------------");
+        $this->info("Sync completed.");
+        $this->info("Total parsed: {$total}");
+        $this->info("Successfully imported/updated: {$imported}");
+        $this->info("Skipped (duplicate URL): {$skipped_duplicate}");
+        $this->info("Skipped (offline link): {$skipped_offline}");
+
+        return 0;
+    }
+
+    /**
+     * Process and sync a single stream.
+     */
+    private function syncStream(array $streamData): string
+    {
+        $url = trim($streamData['url']);
+        $referer = $streamData['referer'] ?? null;
+        $origin = $streamData['origin'] ?? null;
+        
+        // 1. Rule: If the same streaming URL already exists in stream_servers, do nothing.
+        $urlExists = StreamServer::where('url', $url)->exists();
+        if ($urlExists) {
+            return 'duplicate';
+        }
+
+        // 2. Before importing, verify that the stream link works using custom headers if present.
+        if (!$this->checkLink($url, $referer, $origin)) {
+            return 'offline';
+        }
+
+        // Parse category and sport configurations
+        $groupTitleName = trim($streamData['group_title'] ?? 'Other');
+        $categoryName = ucfirst(strtolower($groupTitleName));
+        
+        // Decide if it should go to Sports tab
+        $isSports = false;
+        $nameLower = strtolower($streamData['name']);
+        if (
+            strtolower($groupTitleName) === 'sports' || 
+            str_contains($nameLower, 'sport') || 
+            str_contains($nameLower, 'cricket') || 
+            str_contains($nameLower, 'football') ||
+            str_contains($nameLower, 'willow') ||
+            str_contains($nameLower, 'espn')
+        ) {
+            $isSports = true;
+        }
+
+        // 3. Rule: If same Stream Name exists, add as a new server.
+        $existingStream = Stream::where('name', $streamData['name'])->first();
+
+        if ($existingStream) {
+            $existingServersCount = $existingStream->servers()->count();
+            
+            StreamServer::create([
+                'stream_id' => $existingStream->id,
+                'name' => 'Server ' . ($existingServersCount + 1),
+                'stream_type' => 'm3u8',
+                'url' => $url,
+                'http_referer' => $referer,
+                'http_origin' => $origin,
+                'order' => $existingServersCount,
+            ]);
+
+            // Ensure categories are synced
+            $category = Category::firstOrCreate(['name' => $categoryName]);
+            $existingStream->categories()->syncWithoutDetaching([$category->id]);
+
+            // If it belongs to a sports group, make sure it is flagged to show in sports
+            if ($isSports && !$existingStream->show_in_sports) {
+                $existingStream->update(['show_in_sports' => true]);
+            }
+            
+            return 'imported';
+        }
+
+        // 4. Create new Stream
+        $stream = Stream::create([
+            'name' => $streamData['name'],
+            'logo' => $streamData['logo'] ?: null,
+            'sport_type' => $isSports ? 'other' : 'other', // default category mapping
+            'is_permanent' => true,
+            'show_in_events' => false,
+            'show_in_sports' => $isSports,
+            'show_in_tv' => true,
+            'is_active' => true,
+        ]);
+
+        // Create its first server
+        StreamServer::create([
+            'stream_id' => $stream->id,
+            'name' => 'Server 1',
+            'stream_type' => 'm3u8',
+            'url' => $url,
+            'http_referer' => $referer,
+            'http_origin' => $origin,
+            'order' => 0,
+        ]);
+
+        // Link to category
+        $category = Category::firstOrCreate(['name' => $categoryName]);
+        $stream->categories()->syncWithoutDetaching([$category->id]);
+
+        return 'imported';
+    }
+
+    /**
+     * Check if a stream URL is active and responding.
+     */
+    private function checkLink(string $url, ?string $referer = null, ?string $origin = null): bool
+    {
+        try {
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5); // 5 seconds timeout
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3); // 3 seconds connection timeout
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            
+            $headers = [
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            ];
+
+            if ($referer) {
+                curl_setopt($ch, CURLOPT_REFERER, $referer);
+            }
+            if ($origin) {
+                $headers[] = "Origin: {$origin}";
+            }
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            
+            // Set range header to request only first 100 bytes of the stream manifest/file
+            curl_setopt($ch, CURLOPT_RANGE, '0-100');
+
+            curl_exec($ch);
+            $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            // 200 OK or 206 Partial Content (returned due to the Range header)
+            return $statusCode === 200 || $statusCode === 206;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+}
