@@ -17,9 +17,21 @@
 
     <!-- Filters & Bulk Actions control bar -->
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-800/60">
-        <!-- Category Filter -->
-        <form action="{{ route('admin.streams.index') }}" method="GET" class="flex items-center space-x-3 w-full md:w-auto">
-            <select name="category_id" onchange="this.form.submit()" class="bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all min-w-[200px] cursor-pointer">
+        <!-- Search & Category Filter -->
+        <form action="{{ route('admin.streams.index') }}" method="GET" class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
+            <!-- Search Input -->
+            <div class="relative w-full sm:w-64">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </span>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search streams or teams..." 
+                       class="w-full bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all">
+            </div>
+
+            <!-- Category Select -->
+            <select name="category_id" onchange="this.form.submit()" class="bg-gray-950/60 border border-gray-800 text-gray-300 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all min-w-[150px] cursor-pointer">
                 <option value="">All Categories</option>
                 @foreach($categories as $category)
                     <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
@@ -27,8 +39,13 @@
                     </option>
                 @endforeach
             </select>
-            @if(request('category_id'))
-                <a href="{{ route('admin.streams.index') }}" class="text-xs text-gray-400 hover:text-white transition-colors">Clear</a>
+
+            <button type="submit" class="py-2 px-4 rounded-xl font-semibold text-xs text-white bg-cyan-600 hover:bg-cyan-500 transition-all">
+                Search
+            </button>
+
+            @if(request('category_id') || request('search'))
+                <a href="{{ route('admin.streams.index') }}" class="text-xs text-gray-400 hover:text-white transition-colors whitespace-nowrap">Clear All</a>
             @endif
         </form>
 

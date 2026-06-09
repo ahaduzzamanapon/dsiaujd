@@ -23,6 +23,15 @@ class StreamController extends Controller
             });
         }
 
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('team1_name', 'like', '%' . $search . '%')
+                  ->orWhere('team2_name', 'like', '%' . $search . '%')
+                  ->orWhere('sport_type', 'like', '%' . $search . '%');
+            });
+        }
+
         $streams = $query->paginate(15)->withQueryString();
         $categories = Category::orderBy('order')->get();
 
