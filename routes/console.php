@@ -15,3 +15,4 @@ Schedule::command('m3u:sync https://raw.githubusercontent.com/abusaeeidx/IPTV-Sc
 Schedule::command('m3u:sync https://raw.githubusercontent.com/abusaeeidx/IPTV-Scraper-Zilla/main/combined-playlist.m3u')->hourly();
 Schedule::command('m3u:sync https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/refs/heads/main/playlist.m3u')->hourly();
 Schedule::command('fancode:sync')->everyFifteenMinutes();
+Schedule::command('streams:check-links')->daily();

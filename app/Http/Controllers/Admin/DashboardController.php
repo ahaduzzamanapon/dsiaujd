@@ -86,6 +86,13 @@ class DashboardController extends Controller
                 'description' => 'Fetch match fixtures and live streaming CDNs directly from FanCode.',
                 'type' => 'fancode',
                 'url' => null
+            ],
+            [
+                'id' => 7,
+                'name' => 'Stream Link Checker & Cleaner',
+                'description' => 'Validate and verify all stream links in the database. Auto deletes dead servers, and deletes empty streams.',
+                'type' => 'link-checker',
+                'url' => null
             ]
         ];
 
@@ -113,6 +120,10 @@ class DashboardController extends Controller
                 Artisan::call('fancode:sync');
                 $output = Artisan::output();
                 return back()->with('success', 'FanCode sync finished successfully.')->with('sync_output', $output);
+            } elseif ($type === 'link-checker') {
+                Artisan::call('streams:check-links');
+                $output = Artisan::output();
+                return back()->with('success', 'Stream link validation completed successfully.')->with('sync_output', $output);
             } else {
                 return back()->with('error', 'Invalid sync task type specified.');
             }
