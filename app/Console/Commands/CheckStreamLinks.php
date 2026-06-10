@@ -32,9 +32,13 @@ class CheckStreamLinks extends Command
         \Illuminate\Support\Facades\DB::disableQueryLog();
 
         $this->info("Starting parallel stream link checker...");
-        $servers = StreamServer::all();
+        
+        // Fetch only needed columns to keep memory minimal
+        $servers = StreamServer::select('id', 'url', 'http_referer', 'http_origin', 'stream_id')->get();
         $totalChecked = 0;
-        $deletedServers = 0;
+        $deletedServersCount = 0;
+        
+        $deadServerIds = [];
         
         // Process in batches of 20 links to keep memory and socket footprint very low
         $chunks = $servers->chunk(20);
@@ -50,7 +54,6 @@ class CheckStreamLinks extends Command
                 if (!filter_var($url, FILTER_VALIDATE_URL)) {
                     $handles[$server->id] = [
                         'ch' => null,
-                        'server' => $server,
                         'url' => $url
                     ];
                     continue;
@@ -81,7 +84,6 @@ class CheckStreamLinks extends Command
                 curl_multi_add_handle($mh, $ch);
                 $handles[$server->id] = [
                     'ch' => $ch,
-                    'server' => $server,
                     'url' => $url
                 ];
             }
@@ -96,9 +98,7 @@ class CheckStreamLinks extends Command
             // Evaluate results
             foreach ($handles as $serverId => $info) {
                 $ch = $info['ch'];
-                $server = $info['server'];
-                $stream = $server->stream;
-                $streamName = $stream ? $stream->name : 'Unknown Stream';
+                $url = $info['url'];
                 
                 $isActive = false;
                 if ($ch === null) {
@@ -113,35 +113,48 @@ class CheckStreamLinks extends Command
                 }
                 
                 if (!$isActive) {
-                    $this->error(" -> Dead link found: {$server->url} ({$streamName}). Deleting server...");
-                    $server->delete();
-                    $deletedServers++;
+                    $this->error(" -> Dead link found: {$url}. Queueing for deletion...");
+                    $deadServerIds[] = $serverId;
+                    $deletedServersCount++;
                 } else {
-                    $this->info(" -> Server OK: {$streamName}");
+                    $this->info(" -> Server OK: {$url}");
                 }
                 $totalChecked++;
             }
             
             curl_multi_close($mh);
+            
+            // Unset variables to free memory immediately
+            unset($handles);
+            unset($mh);
             gc_collect_cycles();
         }
         
-        // Delete empty streams
-        $deletedStreams = 0;
-        $allStreams = Stream::with('servers')->get();
-        foreach ($allStreams as $stream) {
-            if ($stream->servers->isEmpty()) {
-                $this->error("Stream '{$stream->name}' (ID: {$stream->id}) has no working servers left. Deleting stream...");
-                $stream->delete();
-                $deletedStreams++;
+        // 1. Delete dead servers in batch
+        if (!empty($deadServerIds)) {
+            $this->info("Deleting " . count($deadServerIds) . " dead servers from the database...");
+            foreach (array_chunk($deadServerIds, 250) as $subDeadIds) {
+                StreamServer::whereIn('id', $subDeadIds)->delete();
+            }
+        }
+        
+        // 2. Delete empty streams (channels with no servers left) in batch
+        $this->info("Checking for channels with no active stream links...");
+        $emptyStreamIds = Stream::doesntHave('servers')->pluck('id')->toArray();
+        $deletedStreamsCount = count($emptyStreamIds);
+        
+        if ($deletedStreamsCount > 0) {
+            $this->info("Deleting {$deletedStreamsCount} empty channels from the database...");
+            foreach (array_chunk($emptyStreamIds, 250) as $subEmptyIds) {
+                Stream::destroy($subEmptyIds);
             }
         }
 
         $this->info("----------------------------------");
         $this->info("Link check complete.");
         $this->info("Checked: {$totalChecked} servers.");
-        $this->info("Deleted: {$deletedServers} dead servers.");
-        $this->info("Deleted: {$deletedStreams} empty streams.");
+        $this->info("Deleted: {$deletedServersCount} dead servers.");
+        $this->info("Deleted: {$deletedStreamsCount} empty channels.");
         
         return 0;
     }
