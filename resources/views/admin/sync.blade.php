@@ -289,13 +289,11 @@
             const indicator = document.getElementById('console-status-indicator');
             const timer = document.getElementById('console-timer');
             
-            const isAtBottom = consoleOutput.scrollHeight - consoleOutput.clientHeight <= consoleOutput.scrollTop + 50;
-            
             consoleOutput.innerText = data.content;
             
-            if (isAtBottom) {
+            setTimeout(() => {
                 consoleOutput.scrollTop = consoleOutput.scrollHeight;
-            }
+            }, 50);
             
             if (data.duration) {
                 timer.innerText = data.duration;
