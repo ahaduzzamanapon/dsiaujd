@@ -92,7 +92,15 @@
         <!-- Right Side: Sync Tasks Monitor -->
         <div class="lg:col-span-1">
             <div class="glass-panel p-6 rounded-3xl shadow-xl sticky top-6">
-                <h3 class="text-lg font-bold text-white mb-2">Sync Monitor & History</h3>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-bold text-white">Sync Monitor & History</h3>
+                    <button id="clear-history-btn" onclick="confirmClearHistory(event)" class="text-xs text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1.5 py-1 px-2 rounded hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        <span>Clear History</span>
+                    </button>
+                </div>
                 <p class="text-xs text-gray-400 mb-6">Track background execution processes and logs in real-time.</p>
                 
                 <div id="tasks-container" class="space-y-4 max-h-[600px] overflow-y-auto pr-1">
@@ -465,6 +473,70 @@
                 console.error('Failed to copy: ', err);
             });
         }
+    }
+
+    function confirmClearHistory(event) {
+        event.preventDefault();
+        
+        const runningTasks = document.querySelectorAll('[data-status="running"]');
+        let confirmMsg = 'Are you sure you want to clear all sync monitor history? This will permanently delete all task records and log files.';
+        if (runningTasks.length > 0) {
+            confirmMsg = 'WARNING: There are active sync tasks currently running! ' + confirmMsg;
+        }
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        const btn = document.getElementById('clear-history-btn');
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-rose-400/20 border-t-rose-400 rounded-full"></span> Clearing...`;
+        
+        const tokenElement = document.querySelector('input[name="_token"]');
+        const token = tokenElement ? tokenElement.value : '';
+        
+        fetch('{{ route("admin.sync.clear-history") }}', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            
+            if (data.success) {
+                showToast(data.message, 'success');
+                
+                const container = document.getElementById('tasks-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div id="no-tasks-msg" class="text-center py-8 text-gray-500 text-xs">
+                            No sync tasks triggered yet.
+                        </div>
+                    `;
+                }
+                
+                if (tasksPollInterval) {
+                    clearInterval(tasksPollInterval);
+                    tasksPollInterval = null;
+                }
+                
+                closeLogConsole();
+            } else {
+                showToast(data.error || 'Failed to clear sync history.', 'error');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            console.error(err);
+            showToast('Error connecting to server.', 'error');
+        });
     }
 
     function ucfirst(str) {

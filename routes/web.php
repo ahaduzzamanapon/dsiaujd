@@ -123,4 +123,5 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
     Route::post('sync/run', [DashboardController::class, 'runSync'])->name('sync.run');
     Route::get('sync/tasks', [DashboardController::class, 'getSyncTasks'])->name('sync.tasks');
     Route::get('sync/tasks/{id}/log', [DashboardController::class, 'getSyncTaskLog'])->name('sync.log');
+    Route::post('sync/clear-history', [DashboardController::class, 'clearSyncHistory'])->name('sync.clear-history');
 });

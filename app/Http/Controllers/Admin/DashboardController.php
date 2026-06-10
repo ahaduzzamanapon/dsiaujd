@@ -237,9 +237,48 @@ class DashboardController extends Controller
         }
 
         return response()->json([
-            'content' => $content ?: ($task->status === 'pending' ? 'Waiting for execution to start...' : 'Initializing console output...'),
+            'content' => $content ?: ($task->status === 'running' ? 'Initializing console output...' : ($task->status === 'pending' ? 'Waiting for execution to start...' : 'No logs available.')),
             'status' => $task->status,
             'duration' => $task->started_at ? $task->started_at->diffInSeconds($task->completed_at ?: now()) . 's' : null
         ]);
+    }
+
+    /**
+     * Clear all sync task history records and their log files.
+     */
+    public function clearSyncHistory(Request $request)
+    {
+        try {
+            // Delete all SyncTask database records
+            SyncTask::query()->delete();
+
+            // Clear log directory
+            $logDir = storage_path('logs/sync');
+            if (file_exists($logDir) && is_dir($logDir)) {
+                $files = glob($logDir . '/*.log');
+                foreach ($files as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
+                }
+            }
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sync task history cleared successfully.'
+                ]);
+            }
+
+            return back()->with('success', 'Sync task history cleared successfully.');
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to clear sync history: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->with('error', 'Failed to clear sync history: ' . $e->getMessage());
+        }
     }
 }
