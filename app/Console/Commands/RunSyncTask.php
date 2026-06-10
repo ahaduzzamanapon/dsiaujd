@@ -48,7 +48,7 @@ class RunSyncTask extends Command
         $this->info("--------------------------------------------------");
 
         // Construct the underlying Artisan command to run
-        $cmd = [PHP_BINARY, 'artisan'];
+        $cmd = [PHP_BINARY, base_path('artisan')];
         if ($task->type === 'm3u') {
             $cmd[] = 'm3u:sync';
             $cmd[] = $task->url;
@@ -68,7 +68,7 @@ class RunSyncTask extends Command
 
         try {
             // Spawn the command process
-            $process = new Process($cmd);
+            $process = new Process($cmd, base_path());
             $process->setTimeout(3600); // 1 hour timeout limit
 
             // Run the process and write output in real time
