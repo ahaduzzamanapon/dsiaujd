@@ -71,7 +71,7 @@ class RunSyncTask extends Command
         try {
             // Spawn the command process
             $process = new Process($cmd, base_path());
-            $process->setTimeout(3600); // 1 hour timeout limit
+            $process->setTimeout(null); // Disable timeout limit
 
             // Run the process and write output in real time
             $exitCode = $process->run(function ($type, $buffer) {
