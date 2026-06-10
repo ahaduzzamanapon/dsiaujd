@@ -72,6 +72,7 @@ Route::prefix('api')->group(function () {
     Route::get('/app-settings', [ApiController::class, 'getSettings']);
     Route::get('/categories', [ApiController::class, 'getCategories']);
     Route::get('/categories/{id}/streams', [ApiController::class, 'getStreamsByCategory']);
+    Route::get('/streams', [ApiController::class, 'getAllStreams']);
     Route::get('/live-events', [ApiController::class, 'getLiveEvents']);
     Route::get('/sports-streams', [ApiController::class, 'getSportsStreams']);
 });

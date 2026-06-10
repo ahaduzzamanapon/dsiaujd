@@ -136,4 +136,40 @@ class ApiController extends Controller
             'data' => $sports
         ]);
     }
+
+    /**
+     * Get all active TV channels/streams.
+     */
+    public function getAllStreams(Request $request)
+    {
+        $now = Carbon::now();
+        $query = Stream::where('is_active', true)
+            ->where(function ($q) use ($now) {
+                $q->where('is_permanent', true)
+                  ->orWhere('expire_time', '>', $now);
+            });
+
+        // Filter for TV channels specifically, if wanted, or all streams
+        // Let's search across all streams that have show_in_tv true OR show_in_sports true
+        $query->where(function ($q) {
+            $q->where('show_in_tv', true)
+              ->orWhere('show_in_sports', true);
+        });
+
+        if ($request->has('q')) {
+            $search = $request->query('q');
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $streams = $query->with(['servers' => function ($q) {
+                $q->orderBy('order');
+            }])
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $streams
+        ]);
+    }
 }
