@@ -7,6 +7,12 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\StreamController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\PromoBannerController;
+
+use App\Models\Stream;
+use App\Models\PromoBanner;
+use App\Models\Category;
+use Carbon\Carbon;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,7 +20,47 @@ use App\Http\Controllers\Admin\SettingController;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return view('welcome');
+    $now = Carbon::now();
+    
+    // Fetch active banners recursively attaching stream details
+    $banners = PromoBanner::where('is_active', true)
+        ->orderBy('order')
+        ->orderBy('id', 'desc')
+        ->get();
+
+    foreach ($banners as $banner) {
+        $banner->stream1 = $banner->stream1_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream1_id) : null;
+        $banner->stream2 = $banner->stream2_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream2_id) : null;
+        $banner->stream3 = $banner->stream3_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream3_id) : null;
+    }
+
+    // Fetch active and upcoming live events
+    $liveEvents = Stream::where('show_in_events', true)
+        ->where('is_active', true)
+        ->where(function ($query) use ($now) {
+            $query->where('is_permanent', true)
+                  ->orWhere('expire_time', '>', $now);
+        })
+        ->with(['servers' => function ($query) {
+            $query->orderBy('order');
+        }])
+        ->orderBy('start_time', 'asc')
+        ->get();
+
+    // Fetch categories with their active TV channels
+    $categories = Category::with(['streams' => function ($query) use ($now) {
+        $query->where('show_in_tv', true)
+              ->where('is_active', true)
+              ->where(function ($q) use ($now) {
+                  $q->where('is_permanent', true)
+                    ->orWhere('expire_time', '>', $now);
+              })
+              ->orderBy('name');
+    }])->orderBy('order')->get();
+
+    $settings = \App\Models\AppSetting::first();
+
+    return view('welcome', compact('banners', 'liveEvents', 'categories', 'settings'));
 })->name('home');
 
 /*
@@ -54,6 +100,9 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
     // Promotional Alert Route
     Route::get('/settings/promo-alert', [SettingController::class, 'editPromo'])->name('settings.promo.edit');
     Route::post('/settings/promo-alert', [SettingController::class, 'updatePromo'])->name('settings.promo.update');
+
+    // Promotional Banners CRUD Resource
+    Route::resource('promo-banners', PromoBannerController::class);
 
     // Categories CRUD Resource
     Route::resource('categories', CategoryController::class);

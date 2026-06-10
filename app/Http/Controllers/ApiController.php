@@ -23,9 +23,24 @@ class ApiController extends Controller
             ], 404);
         }
 
+        // Load active promo banners along with their streams
+        $activeBanners = \App\Models\PromoBanner::where('is_active', true)
+            ->orderBy('order')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        foreach ($activeBanners as $banner) {
+            $banner->stream1 = $banner->stream1_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream1_id) : null;
+            $banner->stream2 = $banner->stream2_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream2_id) : null;
+            $banner->stream3 = $banner->stream3_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream3_id) : null;
+        }
+
+        $settingsData = $settings->toArray();
+        $settingsData['promo_banners'] = $activeBanners;
+
         return response()->json([
             'status' => 'success',
-            'data' => $settings
+            'data' => $settingsData
         ]);
     }
 

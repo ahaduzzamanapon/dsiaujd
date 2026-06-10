@@ -96,4 +96,56 @@ class SettingController extends Controller
 
         return redirect()->route('admin.settings.promo.edit')->with('success', 'Promotional alert settings updated successfully.');
     }
+
+    /**
+     * Show the promotional banner settings form.
+     */
+    public function editBanner()
+    {
+        $settings = AppSetting::firstOrCreate(['id' => 1], [
+            'app_version' => '1.0.0',
+            'is_mandatory_update' => false,
+            'update_message' => 'Please update the app to the latest version.',
+            'update_url' => 'https://play.google.com/store',
+            'welcome_message' => '• Enjoy live events and TV streaming with the latest updates! •',
+        ]);
+        
+        $streams = \App\Models\Stream::where('is_active', true)->orderBy('name')->get();
+        
+        return view('admin.settings.banner', compact('settings', 'streams'));
+    }
+
+    /**
+     * Update the promotional banner settings.
+     */
+    public function updateBanner(Request $request)
+    {
+        $data = $request->validate([
+            'promo_banner_title' => 'required|string|max:255',
+            'promo_banner_subtitle' => 'required|string|max:1000',
+            'promo_banner_logo' => 'nullable|url|max:1000',
+            'promo_banner_countdown' => 'nullable|date_format:Y-m-d\TH:i|max:50',
+            'promo_banner_btn_text' => 'nullable|string|max:255',
+            'promo_banner_btn_link' => 'nullable|url|max:1000',
+            'promo_banner_stream1_id' => 'nullable|integer',
+            'promo_banner_stream2_id' => 'nullable|integer',
+            'promo_banner_stream3_id' => 'nullable|integer',
+        ]);
+
+        $settings = AppSetting::firstOrCreate(['id' => 1]);
+        $settings->update([
+            'promo_banner_enabled' => $request->has('promo_banner_enabled'),
+            'promo_banner_title' => $data['promo_banner_title'],
+            'promo_banner_subtitle' => $data['promo_banner_subtitle'],
+            'promo_banner_logo' => $data['promo_banner_logo'],
+            'promo_banner_countdown' => $data['promo_banner_countdown'] ? str_replace('T', ' ', $data['promo_banner_countdown']) . ':00' : null,
+            'promo_banner_btn_text' => $data['promo_banner_btn_text'],
+            'promo_banner_btn_link' => $data['promo_banner_btn_link'],
+            'promo_banner_stream1_id' => $data['promo_banner_stream1_id'],
+            'promo_banner_stream2_id' => $data['promo_banner_stream2_id'],
+            'promo_banner_stream3_id' => $data['promo_banner_stream3_id'],
+        ]);
+
+        return redirect()->route('admin.settings.banner.edit')->with('success', 'Promotional banner settings updated successfully.');
+    }
 }
