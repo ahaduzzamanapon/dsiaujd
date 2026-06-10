@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="max-w-2xl glass-panel p-8 rounded-3xl shadow-xl">
-    <form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-6">
+    <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data" class="space-y-6">
         @csrf
 
         <!-- scrolling banner welcome text (NOTICE) -->
@@ -44,15 +44,25 @@
             <p class="text-[10px] text-gray-500">If Mandatory Update is checked, users with older app versions will be blocked until they update.</p>
         </div>
 
-        <!-- Update details -->
+        <!-- Update details & App File Upload -->
         <div class="space-y-4 pt-4 border-t border-gray-800">
-            <h3 class="text-lg font-bold text-white pb-1">Update Alert Details</h3>
+            <h3 class="text-lg font-bold text-white pb-1">Update Alert & App Binary</h3>
 
             <div>
-                <label for="update_url" class="block text-sm font-medium text-gray-300 mb-2">Download / Store URL</label>
-                <input id="update_url" type="url" name="update_url" value="{{ old('update_url', $settings->update_url) }}" required
+                <label for="app_file" class="block text-sm font-medium text-gray-300 mb-2">Upload App (APK File)</label>
+                <div class="relative group">
+                    <input id="app_file" type="file" name="app_file" accept=".apk"
+                           class="w-full bg-gray-950/50 border border-gray-800 group-hover:border-gray-700 focus:border-cyan-500 text-gray-400 rounded-xl px-4 py-2.5 outline-none transition-all text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-500 file:text-slate-950 hover:file:bg-cyan-400">
+                </div>
+                <p class="text-[10px] text-gray-500 mt-1">Uploading an APK will automatically save it as <strong>livetvbd.apk</strong> in the public folder and overwrite the Download URL to point to it.</p>
+            </div>
+
+            <div>
+                <label for="update_url" class="block text-sm font-medium text-gray-300 mb-2">Download / Store URL (Manual Override)</label>
+                <input id="update_url" type="url" name="update_url" value="{{ old('update_url', $settings->update_url) }}"
                        class="w-full bg-gray-950/50 border border-gray-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-white rounded-xl px-4 py-2.5 outline-none transition-all text-sm"
                        placeholder="https://play.google.com/store/apps/details?id=...">
+                <p class="text-[10px] text-gray-500 mt-1">Current Configured URL: <a href="{{ $settings->update_url }}" target="_blank" class="text-cyan-400 hover:underline">{{ $settings->update_url }}</a></p>
             </div>
 
             <div>

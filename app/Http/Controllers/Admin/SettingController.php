@@ -29,20 +29,35 @@ class SettingController extends Controller
      */
     public function update(Request $request)
     {
+        $settings = AppSetting::firstOrCreate(['id' => 1]);
+
         $data = $request->validate([
             'app_version' => 'required|string|max:50',
             'is_mandatory_update' => 'nullable|boolean',
             'update_message' => 'required|string|max:1000',
-            'update_url' => 'required|url|max:500',
+            'update_url' => 'nullable|url|max:500',
             'welcome_message' => 'required|string|max:2000',
+            'app_file' => 'nullable|file|max:102400', // max 100MB
         ]);
 
-        $settings = AppSetting::firstOrCreate(['id' => 1]);
+        $updateUrl = $request->input('update_url') ?? $settings->update_url;
+
+        if ($request->hasFile('app_file')) {
+            $file = $request->file('app_file');
+            $fileName = 'livetvbd.apk';
+            $file->move(public_path(), $fileName);
+            $updateUrl = url($fileName);
+        }
+
+        if (empty($updateUrl)) {
+            $updateUrl = url('livetvbd.apk');
+        }
+
         $settings->update([
             'app_version' => $data['app_version'],
             'is_mandatory_update' => $request->has('is_mandatory_update'),
             'update_message' => $data['update_message'],
-            'update_url' => $data['update_url'],
+            'update_url' => $updateUrl,
             'welcome_message' => $data['welcome_message'],
         ]);
 
