@@ -176,11 +176,11 @@
                                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-3.5">
                                     @if($banner->stream1 && count($banner->stream1->servers) > 0)
                                         <button onclick="playSecureStream('{{ $banner->stream1->name }}', '{{ base64_encode($banner->stream1->servers[0]->url) }}', true)" class="flex items-center space-x-2 px-3.5 py-1.5 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-xs font-semibold text-slate-200 hover:text-cyan-400 transition-all">
-                                            <div class="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
+                                            <div class="w-7 h-7 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
                                                 @if($banner->stream1->logo)
                                                     <img src="{{ $banner->stream1->logo }}" class="w-full h-full object-cover">
                                                 @else
-                                                    <svg class="w-3 h-3 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+                                                    <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
                                                 @endif
                                             </div>
                                             <span>{{ $banner->stream1->name }}</span>
@@ -188,11 +188,11 @@
                                     @endif
                                     @if($banner->stream2 && count($banner->stream2->servers) > 0)
                                         <button onclick="playSecureStream('{{ $banner->stream2->name }}', '{{ base64_encode($banner->stream2->servers[0]->url) }}', true)" class="flex items-center space-x-2 px-3.5 py-1.5 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-xs font-semibold text-slate-200 hover:text-cyan-400 transition-all">
-                                            <div class="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
+                                            <div class="w-7 h-7 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
                                                 @if($banner->stream2->logo)
                                                     <img src="{{ $banner->stream2->logo }}" class="w-full h-full object-cover">
                                                 @else
-                                                    <svg class="w-3 h-3 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+                                                    <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
                                                 @endif
                                             </div>
                                             <span>{{ $banner->stream2->name }}</span>
@@ -200,11 +200,11 @@
                                     @endif
                                     @if($banner->stream3 && count($banner->stream3->servers) > 0)
                                         <button onclick="playSecureStream('{{ $banner->stream3->name }}', '{{ base64_encode($banner->stream3->servers[0]->url) }}', true)" class="flex items-center space-x-2 px-3.5 py-1.5 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-xs font-semibold text-slate-200 hover:text-cyan-400 transition-all">
-                                            <div class="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
+                                            <div class="w-7 h-7 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
                                                 @if($banner->stream3->logo)
                                                     <img src="{{ $banner->stream3->logo }}" class="w-full h-full object-cover">
                                                 @else
-                                                    <svg class="w-3 h-3 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+                                                    <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
                                                 @endif
                                             </div>
                                             <span>{{ $banner->stream3->name }}</span>
@@ -400,11 +400,11 @@
                     @foreach($category->streams as $stream)
                     <div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center space-y-3 relative group overflow-hidden cursor-pointer" data-categories="cat-{{ $category->id }}" onclick="playSecureStream('{{ $stream->name }}', '{{ count($stream->servers) > 0 ? base64_encode($stream->servers[0]->url) : '' }}', false)">
                         <!-- Channel Logo -->
-                        <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800/80 flex items-center justify-center overflow-hidden relative">
+                        <div class="w-24 h-24 rounded-2xl bg-slate-900 border border-slate-800/80 flex items-center justify-center overflow-hidden relative">
                             @if($stream->logo)
-                                <img src="{{ $stream->logo }}" class="w-full h-full object-contain p-1.5">
+                                <img src="{{ $stream->logo }}" class="w-full h-full object-contain p-2">
                             @else
-                                <span class="text-sm font-black text-cyan-400">{{ strtoupper(substr($stream->name, 0, 2)) }}</span>
+                                <span class="text-lg font-black text-cyan-400">{{ strtoupper(substr($stream->name, 0, 2)) }}</span>
                             @endif
                             <!-- Lock Overlay Badge -->
                             <div class="absolute inset-0 bg-slate-950/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">

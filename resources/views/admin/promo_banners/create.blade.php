@@ -135,3 +135,55 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<style>
+    .ts-wrapper .ts-control {
+        background-color: rgba(3, 7, 18, 0.4) !important;
+        border-color: rgba(31, 41, 55, 1) !important;
+        color: white !important;
+        border-radius: 0.75rem !important;
+        padding: 10px 14px !important;
+        font-size: 0.75rem !important;
+    }
+    .ts-dropdown {
+        background-color: rgba(15, 23, 42, 0.95) !important;
+        border-color: rgba(31, 41, 55, 1) !important;
+        color: white !important;
+        backdrop-filter: blur(12px);
+        border-radius: 0.75rem !important;
+        margin-top: 4px !important;
+        font-size: 0.75rem !important;
+    }
+    .ts-dropdown .active {
+        background-color: rgba(6, 182, 212, 0.2) !important;
+        color: #06b6d4 !important;
+    }
+    .ts-dropdown .option {
+        color: rgba(209, 213, 219, 1) !important;
+        padding: 8px 12px !important;
+    }
+    .ts-wrapper .ts-control input {
+        color: white !important;
+    }
+    .ts-wrapper.single .ts-control::after {
+        border-color: rgba(156, 163, 175, 1) transparent transparent transparent !important;
+    }
+</style>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const config = {
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            }
+        };
+        new TomSelect('#stream1_id', config);
+        new TomSelect('#stream2_id', config);
+        new TomSelect('#stream3_id', config);
+    });
+</script>
+@endpush
