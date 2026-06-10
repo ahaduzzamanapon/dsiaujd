@@ -23,16 +23,21 @@ Route::get('/', function () {
     $now = Carbon::now();
     
     // Fetch active banners recursively attaching stream details
-    $banners = PromoBanner::where('is_active', true)
-        ->orderBy('order')
-        ->orderBy('id', 'desc')
-        ->get();
-
-    foreach ($banners as $banner) {
-        $banner->stream1 = $banner->stream1_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream1_id) : null;
-        $banner->stream2 = $banner->stream2_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream2_id) : null;
-        $banner->stream3 = $banner->stream3_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream3_id) : null;
-    }
+    $banners = PromoBanner::with([
+        'stream1' => function ($q) {
+            $q->where('is_active', true)->with('servers');
+        },
+        'stream2' => function ($q) {
+            $q->where('is_active', true)->with('servers');
+        },
+        'stream3' => function ($q) {
+            $q->where('is_active', true)->with('servers');
+        }
+    ])
+    ->where('is_active', true)
+    ->orderBy('order')
+    ->orderBy('id', 'desc')
+    ->get();
 
     // Fetch active and upcoming live events
     $liveEvents = Stream::where('show_in_events', true)

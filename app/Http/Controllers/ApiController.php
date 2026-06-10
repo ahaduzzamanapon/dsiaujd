@@ -24,16 +24,21 @@ class ApiController extends Controller
         }
 
         // Load active promo banners along with their streams
-        $activeBanners = \App\Models\PromoBanner::where('is_active', true)
-            ->orderBy('order')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        foreach ($activeBanners as $banner) {
-            $banner->stream1 = $banner->stream1_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream1_id) : null;
-            $banner->stream2 = $banner->stream2_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream2_id) : null;
-            $banner->stream3 = $banner->stream3_id ? Stream::with('servers')->where('is_active', true)->find($banner->stream3_id) : null;
-        }
+        $activeBanners = \App\Models\PromoBanner::with([
+            'stream1' => function ($q) {
+                $q->where('is_active', true)->with('servers');
+            },
+            'stream2' => function ($q) {
+                $q->where('is_active', true)->with('servers');
+            },
+            'stream3' => function ($q) {
+                $q->where('is_active', true)->with('servers');
+            }
+        ])
+        ->where('is_active', true)
+        ->orderBy('order')
+        ->orderBy('id', 'desc')
+        ->get();
 
         $settingsData = $settings->toArray();
         $settingsData['promo_banners'] = $activeBanners;
