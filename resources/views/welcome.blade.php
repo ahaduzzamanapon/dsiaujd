@@ -21,8 +21,7 @@
             }
         }
     </script>
-    <!-- Video.js CSS -->
-    <link href="https://vjs.zencdn.net/7.20.3/video-js.min.css" rel="stylesheet" />
+
     <style>
         body {
             background-color: #020617;
@@ -173,41 +172,41 @@
                             @if($banner->stream1 || $banner->stream2 || $banner->stream3)
                             <div class="pt-2">
                                 <span class="text-[9px] uppercase tracking-widest text-slate-500 font-bold block mb-2.5">QUICK STREAMS</span>
-                                <div class="flex flex-wrap items-center justify-center md:justify-start gap-3.5">
+                                <div class="flex flex-wrap items-start justify-center md:justify-start gap-3.5">
                                     @if($banner->stream1 && count($banner->stream1->servers) > 0)
-                                        <button onclick="playSecureStream('{{ $banner->stream1->name }}', '{{ base64_encode($banner->stream1->servers[0]->url) }}', true)" class="flex items-center space-x-2 px-3.5 py-1.5 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-xs font-semibold text-slate-200 hover:text-cyan-400 transition-all">
-                                            <div class="w-7 h-7 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
+                                        <button onclick="playSecureStream('{{ $banner->stream1->name }}', '{{ base64_encode($banner->stream1->servers[0]->url) }}', true)" class="flex flex-col items-center space-y-1.5 px-3 py-2 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-[10px] font-semibold text-slate-200 hover:text-cyan-400 transition-all w-20 text-center shrink-0">
+                                            <div class="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden shrink-0">
                                                 @if($banner->stream1->logo)
                                                     <img src="{{ $banner->stream1->logo }}" class="w-full h-full object-cover">
                                                 @else
-                                                    <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+                                                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
                                                 @endif
                                             </div>
-                                            <span>{{ $banner->stream1->name }}</span>
+                                            <span class="truncate w-full block">{{ $banner->stream1->name }}</span>
                                         </button>
                                     @endif
                                     @if($banner->stream2 && count($banner->stream2->servers) > 0)
-                                        <button onclick="playSecureStream('{{ $banner->stream2->name }}', '{{ base64_encode($banner->stream2->servers[0]->url) }}', true)" class="flex items-center space-x-2 px-3.5 py-1.5 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-xs font-semibold text-slate-200 hover:text-cyan-400 transition-all">
-                                            <div class="w-7 h-7 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
+                                        <button onclick="playSecureStream('{{ $banner->stream2->name }}', '{{ base64_encode($banner->stream2->servers[0]->url) }}', true)" class="flex flex-col items-center space-y-1.5 px-3 py-2 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-[10px] font-semibold text-slate-200 hover:text-cyan-400 transition-all w-20 text-center shrink-0">
+                                            <div class="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden shrink-0">
                                                 @if($banner->stream2->logo)
                                                     <img src="{{ $banner->stream2->logo }}" class="w-full h-full object-cover">
                                                 @else
-                                                    <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+                                                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
                                                 @endif
                                             </div>
-                                            <span>{{ $banner->stream2->name }}</span>
+                                            <span class="truncate w-full block">{{ $banner->stream2->name }}</span>
                                         </button>
                                     @endif
                                     @if($banner->stream3 && count($banner->stream3->servers) > 0)
-                                        <button onclick="playSecureStream('{{ $banner->stream3->name }}', '{{ base64_encode($banner->stream3->servers[0]->url) }}', true)" class="flex items-center space-x-2 px-3.5 py-1.5 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-xs font-semibold text-slate-200 hover:text-cyan-400 transition-all">
-                                            <div class="w-7 h-7 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden">
+                                        <button onclick="playSecureStream('{{ $banner->stream3->name }}', '{{ base64_encode($banner->stream3->servers[0]->url) }}', true)" class="flex flex-col items-center space-y-1.5 px-3 py-2 bg-slate-900/80 hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-[10px] font-semibold text-slate-200 hover:text-cyan-400 transition-all w-20 text-center shrink-0">
+                                            <div class="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center overflow-hidden shrink-0">
                                                 @if($banner->stream3->logo)
                                                     <img src="{{ $banner->stream3->logo }}" class="w-full h-full object-cover">
                                                 @else
-                                                    <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+                                                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="currentColor" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"/></svg>
                                                 @endif
                                             </div>
-                                            <span>{{ $banner->stream3->name }}</span>
+                                            <span class="truncate w-full block">{{ $banner->stream3->name }}</span>
                                         </button>
                                     @endif
                                 </div>
@@ -369,104 +368,70 @@
 
 
         <!-- 3. LIVE TV CHANNELS SECTION (LOCKED FOR DOWNLOAD FORCE) -->
-        <section id="tv-channels" class="space-y-6">
-            <div class="flex items-center justify-between border-l-4 border-indigo-500 pl-4 py-1">
-                <div>
-                    <h3 class="text-lg font-extrabold uppercase tracking-wider text-white">LIVE TV CHANNELS</h3>
-                    <p class="text-[10px] text-slate-500 font-semibold uppercase">Download Android App to watch these premium networks</p>
+        @php
+            $totalChannels = 0;
+            if(isset($categories)) {
+                foreach($categories as $category) {
+                    $totalChannels += count($category->streams);
+                }
+            }
+            $displayCount = $totalChannels > 0 ? $totalChannels . ' ' : '100+ ';
+        @endphp
+        <section id="tv-channels" class="relative overflow-hidden rounded-3xl border border-indigo-500/20 bg-gradient-to-tr from-slate-950 to-indigo-950/40 p-8 sm:p-10 md:p-12 shadow-2xl">
+            <!-- Glow background overlay -->
+            <div class="absolute right-0 bottom-0 w-72 h-72 bg-indigo-500/10 rounded-full filter blur-3xl -z-10"></div>
+            <div class="absolute left-10 top-10 w-48 h-48 bg-cyan-500/5 rounded-full filter blur-3xl -z-10"></div>
+
+            <div class="max-w-3xl mx-auto text-center space-y-6">
+                <!-- Glowing Locked Indicator -->
+                <div class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-rose-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
                 </div>
-                <!-- App Store Badge -->
-                <span class="text-[9px] font-bold tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full uppercase">APP ONLY</span>
-            </div>
 
-            <!-- Category Filter Buttons -->
-            @if(count($categories) > 0)
-            <div class="flex flex-wrap gap-2.5 pb-2">
-                <button onclick="filterTVCategory('all')" id="catBtn-all" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 transition-all border border-transparent">
-                    All Channels
-                </button>
-                @foreach($categories as $category)
-                    @if(count($category->streams) > 0)
-                    <button onclick="filterTVCategory('cat-{{ $category->id }}')" id="catBtn-cat-{{ $category->id }}" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all">
-                        {{ $category->name }}
-                    </button>
-                    @endif
-                @endforeach
-            </div>
+                <div class="space-y-3">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-indigo-200">
+                        {{ $displayCount }}PREMIUM LIVE TV CHANNELS LOCKED
+                    </h3>
+                    <p class="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+                        To watch JioTV, Sony Sports Network, Star Sports, and other premium channels, download our official Android Application. Web portal streaming is only open for featured live events.
+                    </p>
+                </div>
 
-            <!-- TV Channels Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4" id="tvChannelsGrid">
-                @foreach($categories as $category)
-                    @foreach($category->streams as $stream)
-                    <div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center space-y-3 relative group overflow-hidden cursor-pointer" data-categories="cat-{{ $category->id }}" onclick="playSecureStream('{{ $stream->name }}', '{{ count($stream->servers) > 0 ? base64_encode($stream->servers[0]->url) : '' }}', false)">
-                        <!-- Channel Logo -->
-                        <div class="w-24 h-24 rounded-2xl bg-slate-900 border border-slate-800/80 flex items-center justify-center overflow-hidden relative">
-                            @if($stream->logo)
-                                <img src="{{ $stream->logo }}" class="w-full h-full object-contain p-2">
-                            @else
-                                <span class="text-lg font-black text-cyan-400">{{ strtoupper(substr($stream->name, 0, 2)) }}</span>
-                            @endif
-                            <!-- Lock Overlay Badge -->
-                            <div class="absolute inset-0 bg-slate-950/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            </div>
-                        </div>
-
-                        <!-- Info -->
-                        <div>
-                            <span class="text-[11px] font-bold text-slate-200 block truncate max-w-[120px]">{{ $stream->name }}</span>
-                            <span class="text-[8px] uppercase tracking-wider text-slate-500 font-bold">{{ $category->name }}</span>
-                        </div>
-
-                        <!-- Absolute lock icon in corner -->
-                        <span class="absolute top-2 right-2 text-slate-700 group-hover:text-cyan-400 transition-colors">
-                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2V7a5 5 0 00-5-5zM7 7a3 3 0 116 0v2H7V7z"/></svg>
-                        </span>
+                <!-- Feature badges grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto pt-2 text-xs">
+                    <div class="flex items-center justify-center space-x-2 px-3 py-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-slate-300 font-semibold">
+                        <span class="text-cyan-400">⚡</span>
+                        <span>Low Buffering</span>
                     </div>
-                    @endforeach
-                @endforeach
+                    <div class="flex items-center justify-center space-x-2 px-3 py-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-slate-300 font-semibold">
+                        <span class="text-cyan-400">📺</span>
+                        <span>1080p Full HD</span>
+                    </div>
+                    <div class="flex items-center justify-center space-x-2 px-3 py-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-slate-300 font-semibold">
+                        <span class="text-cyan-400">🛡️</span>
+                        <span>Dual Servers</span>
+                    </div>
+                    <div class="flex items-center justify-center space-x-2 px-3 py-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-slate-300 font-semibold">
+                        <span class="text-cyan-400">📱</span>
+                        <span>Android 5.0+</span>
+                    </div>
+                </div>
+
+                <!-- Action Download CTA -->
+                <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <a href="{{ $settings->update_url ?? '#' }}" class="px-8 py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-black rounded-xl text-xs tracking-widest uppercase transition-all duration-300 shadow-lg shadow-cyan-500/10 flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                        <span>DOWNLOAD MOBILE APP</span>
+                    </a>
+                </div>
             </div>
-            @endif
         </section>
 
     </main>
 
-    <!-- 4. SECURE PLAYER MODAL -->
-    <div id="playerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-md hidden">
-        <!-- Close button outside card -->
-        <button onclick="closePlayerModal()" class="absolute top-6 right-6 p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-full transition-all hover:scale-105">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
 
-        <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
-            <!-- Player Screen Area -->
-            <div class="aspect-video w-full bg-black relative flex items-center justify-center">
-                <!-- Video tag container -->
-                <div class="w-full h-full" id="videoContainer">
-                    <!-- Dynamic VideoJS instantiation inside JS -->
-                </div>
-            </div>
-
-            <!-- Bottom Panel with info & Download APK Prompt -->
-            <div class="p-6 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-slate-800 bg-slate-900/50">
-                <div class="space-y-1.5 text-center sm:text-left">
-                    <div class="flex items-center justify-center sm:justify-start space-x-2">
-                        <span class="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></span>
-                        <h4 class="text-sm font-bold text-white uppercase tracking-wider" id="playerTitle">STREAMING CHANNEL</h4>
-                    </div>
-                    <p class="text-xs text-slate-400 max-w-md">
-                        Web player is limited to live events. For the best buffer-free, full 24/7 experience, download our official Android Application.
-                    </p>
-                </div>
-
-                <!-- Action Button in Player -->
-                <a href="{{ $settings->update_url ?? '#' }}" class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-black rounded-xl text-xs tracking-wider transition-all duration-300 flex items-center space-x-2 shadow-lg shadow-cyan-500/10 shrink-0">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-                    <span>DOWNLOAD MOBILE APP</span>
-                </a>
-            </div>
-        </div>
-    </div>
 
 
     <!-- 5. APP-ONLY LOCK MODAL -->
@@ -507,8 +472,7 @@
         <a href="#live-events" class="hover:text-cyan-400 transition-colors">Back to top 🚀</a>
     </footer>
 
-    <!-- Video.js JS -->
-    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+
 
     <!-- Main Logic Script -->
     <script>
@@ -642,64 +606,8 @@
         // ----------------------------------------
         // VIDEO PLAYER MODAL & OBFUSCATOR
         // ----------------------------------------
-        let vjsPlayer = null;
-
         function playSecureStream(title, encodedUrl, isLiveEvent) {
-            if (!encodedUrl) {
-                triggerDownloadPrompt(title);
-                return;
-            }
-
-            if (!isLiveEvent) {
-                // Force app download for TV channels
-                triggerDownloadPrompt(title);
-                return;
-            }
-
-            const playerModal = document.getElementById('playerModal');
-            const playerTitle = document.getElementById('playerTitle');
-            const videoContainer = document.getElementById('videoContainer');
-            
-            playerTitle.textContent = title;
-            playerModal.classList.remove('hidden');
-
-            // Decode URL securely in memory
-            const decodedUrl = atob(encodedUrl);
-
-            // Recreate video tag to reset player cleanly
-            videoContainer.innerHTML = `
-                <video id="my-video" class="video-js vjs-big-play-centered vjs-theme-custom" controls preload="auto" width="640" height="264">
-                    <source src="${decodedUrl}" type="application/x-mpegURL">
-                    <p class="vjs-no-js">
-                        To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5 video.
-                    </p>
-                </video>
-            `;
-
-            // Initialize Video.js player
-            if (vjsPlayer) {
-                vjsPlayer.dispose();
-            }
-
-            vjsPlayer = videojs('my-video', {
-                fluid: true,
-                autoplay: true,
-                controls: true,
-                userActions: {
-                    doubleClick: true
-                }
-            });
-        }
-
-        function closePlayerModal() {
-            const playerModal = document.getElementById('playerModal');
-            playerModal.classList.add('hidden');
-            if (vjsPlayer) {
-                vjsPlayer.pause();
-                vjsPlayer.dispose();
-                vjsPlayer = null;
-            }
-            document.getElementById('videoContainer').innerHTML = '';
+            triggerDownloadPrompt(title);
         }
 
         // ----------------------------------------
