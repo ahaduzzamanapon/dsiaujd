@@ -59,15 +59,12 @@ class CheckStreamLinks extends Command
         }
 
         $deletedStreams = 0;
-        if (!empty($streamIdsToCheck)) {
-            $uniqueStreamIds = array_unique($streamIdsToCheck);
-            foreach ($uniqueStreamIds as $streamId) {
-                $stream = Stream::with('servers')->find($streamId);
-                if ($stream && $stream->servers->isEmpty()) {
-                    $this->error("Stream '{$stream->name}' has no working servers left. Deleting stream...");
-                    $stream->delete();
-                    $deletedStreams++;
-                }
+        $allStreams = Stream::with('servers')->get();
+        foreach ($allStreams as $stream) {
+            if ($stream->servers->isEmpty()) {
+                $this->error("Stream '{$stream->name}' (ID: {$stream->id}) has no working servers left. Deleting stream...");
+                $stream->delete();
+                $deletedStreams++;
             }
         }
 
