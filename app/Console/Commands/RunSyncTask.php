@@ -54,6 +54,8 @@ class RunSyncTask extends Command
             $cmd[] = $task->url;
         } elseif ($task->type === 'fancode') {
             $cmd[] = 'fancode:sync';
+        } elseif ($task->type === 'bdixtv24') {
+            $cmd[] = 'bdixtv24:sync';
         } elseif ($task->type === 'link-checker') {
             $cmd[] = 'streams:check-links';
         } else {

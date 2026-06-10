@@ -94,6 +94,13 @@ class DashboardController extends Controller
                 'description' => 'Validate and verify all stream links in the database. Auto deletes dead servers, and deletes empty streams.',
                 'type' => 'link-checker',
                 'url' => null
+            ],
+            [
+                'id' => 8,
+                'name' => 'BDIXTV24 Scraper',
+                'description' => 'Fetch live channels and all working streaming servers from BDIXTV24.com.',
+                'type' => 'bdixtv24',
+                'url' => null
             ]
         ];
 
@@ -133,6 +140,9 @@ class DashboardController extends Controller
             }
         } elseif ($type === 'fancode') {
             $name = 'FanCode Scraper';
+            $url = null;
+        } elseif ($type === 'bdixtv24') {
+            $name = 'BDIXTV24 Scraper';
             $url = null;
         } elseif ($type === 'link-checker') {
             $name = 'Stream Link Checker & Cleaner';
