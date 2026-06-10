@@ -28,13 +28,16 @@ class CheckStreamLinks extends Command
     public function handle()
     {
         set_time_limit(0);
+        ini_set('memory_limit', '256M');
+        \Illuminate\Support\Facades\DB::disableQueryLog();
+
         $this->info("Starting parallel stream link checker...");
         $servers = StreamServer::all();
         $totalChecked = 0;
         $deletedServers = 0;
         
-        // Process in batches of 100 links to optimize speed and CPU/Memory usage
-        $chunks = $servers->chunk(100);
+        // Process in batches of 20 links to keep memory and socket footprint very low
+        $chunks = $servers->chunk(20);
         
         foreach ($chunks as $chunk) {
             $this->info("Checking batch of " . $chunk->count() . " servers...");
@@ -120,6 +123,7 @@ class CheckStreamLinks extends Command
             }
             
             curl_multi_close($mh);
+            gc_collect_cycles();
         }
         
         // Delete empty streams
