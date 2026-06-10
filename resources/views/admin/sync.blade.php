@@ -169,7 +169,7 @@
         </div>
     </div>
     <!-- Body -->
-    <pre id="console-output" class="flex-1 p-6 overflow-y-auto font-mono text-[11px] text-emerald-400 leading-relaxed whitespace-pre-wrap select-text bg-gray-950"></pre>
+    <pre id="console-output" class="p-6 font-mono text-[11px] text-emerald-400 leading-relaxed whitespace-pre-wrap select-text bg-gray-950 overflow-y-auto" style="height: 350px; max-height: 350px;"></pre>
 </div>
 @endsection
 
