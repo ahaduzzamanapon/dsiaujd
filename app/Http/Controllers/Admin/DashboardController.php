@@ -34,8 +34,9 @@ class DashboardController extends Controller
                           ->orWhere('expire_time', '>', $now);
                 })
                 ->count(),
-            'total_devices' => Device::count(),
-            'active_devices' => Device::where('last_ping_at', '>=', $fiveMinutesAgo)->count(),
+            'total_devices' => Device::where('platform', '!=', 'web')->count(),
+            'active_app_devices' => Device::where('platform', '!=', 'web')->where('last_ping_at', '>=', $fiveMinutesAgo)->count(),
+            'active_web_devices' => Device::where('platform', 'web')->where('last_ping_at', '>=', $fiveMinutesAgo)->count(),
         ];
 
         // Fetch recent active streams
