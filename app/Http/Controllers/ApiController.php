@@ -208,5 +208,106 @@ class ApiController extends Controller
             'data' => $device
         ]);
     }
+
+    /**
+     * Proxy HLS streams to bypass CORS and mixed-content restrictions.
+     */
+    public function proxyStream(Request $request)
+    {
+        $url = $request->query('url');
+        if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return response('Invalid URL', 400);
+        }
+
+        try {
+            $headers = [
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ];
+            
+            // Auto-forward referer/origin for BDIX/BDIXTV servers if needed
+            if (str_contains($url, 'bdixtv24') || str_contains($url, 'bdix')) {
+                $headers['Referer'] = 'https://bdixtv24.com/';
+                $headers['Origin'] = 'https://bdixtv24.com';
+            }
+
+            $response = \Illuminate\Support\Facades\Http::withHeaders($headers)
+                ->withOptions(['verify' => false])
+                ->get($url);
+
+            if (!$response->successful()) {
+                return response('Failed to fetch stream from source', $response->status());
+            }
+
+            $body = $response->body();
+            $contentType = $response->header('Content-Type') ?: 'application/vnd.apple.mpegurl';
+
+            // Check if this content is an m3u8 playlist
+            if (
+                str_contains($contentType, 'mpegurl') || 
+                str_contains($contentType, 'application/x-mpegURL') || 
+                str_contains($url, '.m3u8') || 
+                str_contains($body, '#EXTM3U')
+            ) {
+                $lines = explode("\n", $body);
+                $rewrittenLines = [];
+                
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line)) continue;
+
+                    if (str_starts_with($line, '#')) {
+                        // EXTM3U metadata / tags
+                        $rewrittenLines[] = $line;
+                    } else {
+                        // Video segment (.ts) or sub-playlist URL
+                        $absoluteUrl = $this->resolveAbsoluteUrl($url, $line);
+                        
+                        // Rewrite the URL to relative proxy path to maintain origin & protocol (HTTP -> HTTPS)
+                        $proxyUrl = '/api/stream-proxy?url=' . urlencode($absoluteUrl);
+                        $rewrittenLines[] = $proxyUrl;
+                    }
+                }
+                
+                $body = implode("\n", $rewrittenLines);
+                $contentType = 'application/vnd.apple.mpegurl';
+            }
+
+            return response($body, 200)
+                ->header('Content-Type', $contentType)
+                ->header('Access-Control-Allow-Origin', '*')
+                ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+                ->header('Access-Control-Allow-Headers', '*');
+
+        } catch (\Exception $e) {
+            return response('Proxy Error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Helper to resolve relative URLs to absolute URLs based on a base URL.
+     */
+    private function resolveAbsoluteUrl($base, $relative)
+    {
+        if (preg_match('/^https?:\/\//i', $relative)) {
+            return $relative;
+        }
+
+        $baseParts = parse_url($base);
+        $scheme = $baseParts['scheme'] ?? 'http';
+        $host = $baseParts['host'] ?? '';
+        $port = isset($baseParts['port']) ? ':' . $baseParts['port'] : '';
+        $path = $baseParts['path'] ?? '';
+
+        if (str_starts_with($relative, '/')) {
+            return $scheme . '://' . $host . $port . $relative;
+        }
+
+        $dir = dirname($path);
+        if ($dir === '/' || $dir === '\\') {
+            $dir = '';
+        }
+
+        return $scheme . '://' . $host . $port . $dir . '/' . $relative;
+    }
 }
 
