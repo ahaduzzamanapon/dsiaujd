@@ -20,8 +20,10 @@ use Carbon\Carbon;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
+    return redirect()->away('https://livetvbd-delta.vercel.app/');
+
     $now = Carbon::now();
-    
+
     // Fetch active banners recursively attaching stream details
     $banners = PromoBanner::with([
         'stream1' => function ($q) {
@@ -34,34 +36,38 @@ Route::get('/', function () {
             $q->where('is_active', true)->with('servers');
         }
     ])
-    ->where('is_active', true)
-    ->orderBy('order')
-    ->orderBy('id', 'desc')
-    ->get();
+        ->where('is_active', true)
+        ->orderBy('order')
+        ->orderBy('id', 'desc')
+        ->get();
 
     // Fetch active and upcoming live events
     $liveEvents = Stream::where('show_in_events', true)
         ->where('is_active', true)
         ->where(function ($query) use ($now) {
             $query->where('is_permanent', true)
-                  ->orWhere('expire_time', '>', $now);
+                ->orWhere('expire_time', '>', $now);
         })
-        ->with(['servers' => function ($query) {
-            $query->orderBy('order');
-        }])
+        ->with([
+            'servers' => function ($query) {
+                $query->orderBy('order');
+            }
+        ])
         ->orderBy('start_time', 'asc')
         ->get();
 
     // Fetch categories with their active TV channels
-    $categories = Category::with(['streams' => function ($query) use ($now) {
-        $query->where('show_in_tv', true)
-              ->where('is_active', true)
-              ->where(function ($q) use ($now) {
-                  $q->where('is_permanent', true)
-                    ->orWhere('expire_time', '>', $now);
-              })
-              ->orderBy('name');
-    }])->orderBy('order')->get();
+    $categories = Category::with([
+        'streams' => function ($query) use ($now) {
+            $query->where('show_in_tv', true)
+                ->where('is_active', true)
+                ->where(function ($q) use ($now) {
+                    $q->where('is_permanent', true)
+                        ->orWhere('expire_time', '>', $now);
+                })
+                ->orderBy('name');
+        }
+    ])->orderBy('order')->get();
 
     $settings = \App\Models\AppSetting::first();
 
@@ -99,7 +105,7 @@ Route::any('/admin/logout', [AuthController::class, 'logout'])->name('admin.logo
 */
 Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Settings Route
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
