@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\SyncTask;
+use App\Models\Device;
 
 class DashboardController extends Controller
 {
@@ -18,6 +19,7 @@ class DashboardController extends Controller
     public function index()
     {
         $now = Carbon::now();
+        $fiveMinutesAgo = Carbon::now()->subMinutes(5);
         
         $stats = [
             'total_categories' => Category::count(),
@@ -32,12 +34,17 @@ class DashboardController extends Controller
                           ->orWhere('expire_time', '>', $now);
                 })
                 ->count(),
+            'total_devices' => Device::count(),
+            'active_devices' => Device::where('last_ping_at', '>=', $fiveMinutesAgo)->count(),
         ];
 
         // Fetch recent active streams
         $recentStreams = Stream::latest()->take(5)->get();
 
-        return view('admin.dashboard', compact('stats', 'recentStreams'));
+        // Fetch recent devices
+        $recentDevices = Device::orderBy('last_ping_at', 'desc')->take(10)->get();
+
+        return view('admin.dashboard', compact('stats', 'recentStreams', 'recentDevices'));
     }
 
     /**

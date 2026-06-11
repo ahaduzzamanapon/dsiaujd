@@ -80,6 +80,7 @@ Route::prefix('api')->group(function () {
     Route::get('/streams', [ApiController::class, 'getAllStreams']);
     Route::get('/live-events', [ApiController::class, 'getLiveEvents']);
     Route::get('/sports-streams', [ApiController::class, 'getSportsStreams']);
+    Route::post('/devices/ping', [ApiController::class, 'pingDevice']);
 });
 
 /*

@@ -177,4 +177,36 @@ class ApiController extends Controller
             'data' => $streams
         ]);
     }
+
+    /**
+     * Register or update a device's ping state.
+     */
+    public function pingDevice(Request $request)
+    {
+        $request->validate([
+            'uuid' => 'required|string',
+            'platform' => 'nullable|string',
+            'model' => 'nullable|string',
+            'os_version' => 'nullable|string',
+            'app_version' => 'nullable|string',
+        ]);
+
+        $device = \App\Models\Device::updateOrCreate(
+            ['uuid' => $request->uuid],
+            [
+                'platform' => $request->platform,
+                'model' => $request->model,
+                'os_version' => $request->os_version,
+                'app_version' => $request->app_version,
+                'last_ping_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Device pinged successfully',
+            'data' => $device
+        ]);
+    }
 }
+

@@ -5,7 +5,7 @@
 
 @section('content')
 <!-- Statistics Grid -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-10">
     <!-- Stat Card 1 -->
     <div class="glass-card p-6 rounded-2xl flex items-center justify-between">
         <div>
@@ -51,6 +51,34 @@
         </div>
         <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+    </div>
+
+    <!-- Stat Card 5 (Total Installs) -->
+    <div class="glass-card p-6 rounded-2xl flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-purple-400 uppercase tracking-wider">Total Installs</span>
+            <h3 class="text-4xl font-bold text-white mt-2">{{ $stats['total_devices'] }}</h3>
+            <span class="text-xs text-gray-400 mt-2 block">Total registered phones</span>
+        </div>
+        <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Stat Card 6 (Active App Users) -->
+    <div class="glass-card p-6 rounded-2xl flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Active Users</span>
+            <h3 class="text-4xl font-bold text-white mt-2">{{ $stats['active_devices'] }}</h3>
+            <span class="text-xs text-gray-400 mt-2 block">Online right now</span>
+        </div>
+        <div class="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
         </div>
     </div>
 </div>
@@ -136,6 +164,87 @@
                 @empty
                     <tr>
                         <td colspan="6" class="p-8 text-center text-gray-500">No streams found. Add a stream to get started.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Recent App Devices Table -->
+<div class="glass-panel p-6 rounded-3xl shadow-xl mt-10">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h3 class="text-xl font-bold text-white">Active App Devices</h3>
+            <p class="text-xs text-gray-400 mt-1">Status of mobile phones running AllTV app</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+            <span class="text-xs font-semibold text-gray-400">Live Session Tracking</span>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-gray-300">
+            <thead class="bg-gray-950/40 text-gray-400 uppercase text-xs font-semibold border-b border-gray-800">
+                <tr>
+                    <th class="p-4">Device Info</th>
+                    <th class="p-4">Platform</th>
+                    <th class="p-4">App Version</th>
+                    <th class="p-4">OS Version</th>
+                    <th class="p-4">Last Ping Time</th>
+                    <th class="p-4">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800/60">
+                @forelse($recentDevices as $device)
+                    @php
+                        $isOnline = $device->last_ping_at && $device->last_ping_at->greaterThanOrEqualTo(now()->subMinutes(5));
+                    @endphp
+                    <tr class="hover:bg-gray-900/20 transition-colors">
+                        <td class="p-4">
+                            <span class="font-medium text-white block">{{ $device->model ?: 'Generic Device' }}</span>
+                            <span class="text-[10px] text-gray-500 font-mono block">{{ $device->uuid }}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-800 border border-gray-700 capitalize flex items-center gap-1.5 w-fit">
+                                @if(strtolower($device->platform) === 'android')
+                                    <svg class="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M17.523 15.3l1.816 3.146a.5.5 0 01-.173.682l-.42.242a.5.5 0 01-.682-.172l-1.83-3.17A8.939 8.939 0 0112 17a8.939 8.939 0 01-4.234-.972l-1.83 3.17a.5.5 0 01-.682.172l-.42-.242a.5.5 0 01-.173-.682L6.477 15.3A8.977 8.977 0 013 7.994V7h18v.994a8.977 8.977 0 01-3.477 7.306zM7 11.5a1 1 0 100-2 1 1 0 000 2zm10 0a1 1 0 100-2 1 1 0 000 2zM12 2a1 1 0 011 1v2.05A8.995 8.995 0 0121 14H3a8.995 8.995 0 018-8.95V3a1 1 0 011-1z"/>
+                                    </svg>
+                                    <span>Android</span>
+                                @elseif(strtolower($device->platform) === 'ios')
+                                    <svg class="w-3.5 h-3.5 fill-current text-white" viewBox="0 0 24 24">
+                                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.2.67-2.92 1.5-.63.72-1.18 1.87-1.03 2.97 1.1.09 2.2-.57 2.96-1.41z"/>
+                                    </svg>
+                                    <span>iOS</span>
+                                @else
+                                    <span>{{ $device->platform ?: 'Unknown' }}</span>
+                                @endif
+                            </span>
+                        </td>
+                        <td class="p-4 text-xs font-mono">v{{ $device->app_version ?: '1.0.0' }}</td>
+                        <td class="p-4 text-xs font-mono">{{ $device->os_version ?: 'N/A' }}</td>
+                        <td class="p-4 text-xs">
+                            {{ $device->last_ping_at ? $device->last_ping_at->diffForHumans() : 'Never' }}
+                        </td>
+                        <td class="p-4">
+                            @if($isOnline)
+                                <span class="flex items-center space-x-1.5 text-emerald-400 text-xs font-medium">
+                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+                                    <span>Online</span>
+                                </span>
+                            @else
+                                <span class="flex items-center space-x-1.5 text-gray-500 text-xs font-medium">
+                                    <span class="w-1.5 h-1.5 bg-gray-600 rounded-full"></span>
+                                    <span>Offline</span>
+                                </span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-gray-500">No active devices tracked yet. Let users launch the mobile app.</td>
                     </tr>
                 @endforelse
             </tbody>
