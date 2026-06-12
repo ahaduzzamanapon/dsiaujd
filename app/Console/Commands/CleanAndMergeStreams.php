@@ -127,6 +127,19 @@ class CleanAndMergeStreams extends Command
 
         $this->info("----------------------------------");
         $this->info("Scan complete. Checked: {$checkedCount} | Merged: {$mergedCount} duplicates.");
+
+        // Delete categories that have no streams left
+        $emptyCategories = \App\Models\Category::doesntHave('streams')->get();
+        $deletedCats = 0;
+        foreach ($emptyCategories as $cat) {
+            $this->line("Deleting empty category: [{$cat->id}] {$cat->name}");
+            $cat->delete();
+            $deletedCats++;
+        }
+        if ($deletedCats > 0) {
+            $this->info("Deleted {$deletedCats} empty categories.");
+        }
+
         return 0;
     }
 

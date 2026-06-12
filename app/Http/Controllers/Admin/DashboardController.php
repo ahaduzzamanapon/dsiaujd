@@ -138,6 +138,20 @@ class DashboardController extends Controller
                 'description' => 'Use Gemini AI to intelligently detect duplicate channels that local matching misses — catches tricky cases like "Star Sports 1 HD" vs "Star Sports 1". Requires GEMINI_API_KEY.',
                 'type' => 'clean-duplicates-ai',
                 'url' => null
+            ],
+            [
+                'id' => 13,
+                'name' => 'AI Category Cleanup',
+                'description' => 'Find all non-standard/extra categories, use Gemini AI to reclassify their channels into the 10 standard categories (Sports, Bangla, Hindi…), then delete the orphan categories.',
+                'type' => 'category-cleanup',
+                'url' => null
+            ],
+            [
+                'id' => 14,
+                'name' => '⚡ Full Maintenance (All-in-One)',
+                'description' => 'Runs everything in sequence: AI Duplicate Cleaner → AI Category Cleanup → Stream Link Checker. Best run nightly.',
+                'type' => 'full-maintenance',
+                'url' => null
             ]
         ];
 
@@ -195,6 +209,12 @@ class DashboardController extends Controller
             $url = null;
         } elseif ($type === 'clean-duplicates-ai') {
             $name = 'Gemini AI Duplicate Cleaner';
+            $url = null;
+        } elseif ($type === 'category-cleanup') {
+            $name = 'AI Category Cleanup';
+            $url = null;
+        } elseif ($type === 'full-maintenance') {
+            $name = '⚡ Full Maintenance (All-in-One)';
             $url = null;
         } else {
             if ($request->ajax()) {

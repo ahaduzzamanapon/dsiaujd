@@ -16,3 +16,8 @@ Schedule::command('m3u:sync https://raw.githubusercontent.com/abusaeeidx/IPTV-Sc
 Schedule::command('m3u:sync https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/refs/heads/main/playlist.m3u')->hourly();
 Schedule::command('fancode:sync')->everyFifteenMinutes();
 Schedule::command('streams:check-links')->daily();
+
+// Daily full maintenance: AI duplicate cleaner + AI category cleanup
+// Runs at 3:00 AM every day (after nightly M3U syncs)
+Schedule::command('maintenance:full')->dailyAt('03:00');
+

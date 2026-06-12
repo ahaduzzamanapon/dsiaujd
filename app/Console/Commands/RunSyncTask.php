@@ -67,6 +67,8 @@ class RunSyncTask extends Command
         } elseif ($task->type === 'clean-duplicates-ai') {
             $cmd[] = 'streams:clean-duplicates';
             $cmd[] = '--ai';
+        } elseif ($task->type === 'category-cleanup') {
+            $cmd[] = 'categories:cleanup';
         } else {
             $errorMsg = "Unknown task type: {$task->type}";
             $this->error($errorMsg);
