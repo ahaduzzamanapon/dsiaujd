@@ -60,6 +60,8 @@ class RunSyncTask extends Command
             $cmd[] = 'aynaott:sync';
         } elseif ($task->type === 'redforce') {
             $cmd[] = 'redforce:sync';
+        } elseif ($task->type === 'bdix198') {
+            $cmd[] = 'bdix198:sync';
         } elseif ($task->type === 'link-checker') {
             $cmd[] = 'streams:check-links';
         } elseif ($task->type === 'clean-duplicates') {

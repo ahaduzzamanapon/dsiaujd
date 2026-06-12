@@ -225,7 +225,10 @@ class ApiController extends Controller
             ];
             
             // Auto-forward referer/origin for BDIX/BDIXTV servers if needed
-            if (str_contains($url, 'bdixtv24') || str_contains($url, 'bdix')) {
+            if (str_contains($url, '198.195.')) {
+                $headers['Referer'] = 'http://198.195.239.50/';
+                $headers['Origin'] = 'http://198.195.239.50';
+            } elseif (str_contains($url, 'bdixtv24') || str_contains($url, 'bdix')) {
                 $headers['Referer'] = 'https://bdixtv24.com/';
                 $headers['Origin'] = 'https://bdixtv24.com';
             }

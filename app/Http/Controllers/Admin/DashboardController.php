@@ -123,6 +123,13 @@ class DashboardController extends Controller
                 'description' => 'Fetch live channels and all working streaming servers from RedForce.live.',
                 'type' => 'redforce',
                 'url' => null
+            ],
+            [
+                'id' => 11,
+                'name' => 'BDIX 198 Scraper',
+                'description' => 'Fetch live TV channels and streams from BDIX 198.195.239.50 portal.',
+                'type' => 'bdix198',
+                'url' => null
             ]
         ];
 
@@ -171,6 +178,9 @@ class DashboardController extends Controller
             $url = null;
         } elseif ($type === 'redforce') {
             $name = 'RedForce Scraper';
+            $url = null;
+        } elseif ($type === 'bdix198') {
+            $name = 'BDIX 198 Scraper';
             $url = null;
         } elseif ($type === 'link-checker') {
             $name = 'Stream Link Checker & Cleaner';
