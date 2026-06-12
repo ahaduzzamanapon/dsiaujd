@@ -68,7 +68,7 @@ class CleanupCategories extends Command
                 // Ask Gemini which standard category this stream belongs to
                 $assigned = $this->askGeminiCategory($stream->name, $cat->name, $apiKey);
 
-                if (!$assigned) {
+                if (!$assigned || !in_array($assigned, self::STANDARD)) {
                     // Fallback: keep in "Live Channel"
                     $assigned = 'Live Channel';
                 }
