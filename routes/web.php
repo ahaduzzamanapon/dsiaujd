@@ -88,7 +88,6 @@ Route::prefix('api')->group(function () {
     Route::get('/sports-streams', [ApiController::class, 'getSportsStreams']);
     Route::post('/devices/ping', [ApiController::class, 'pingDevice']);
     Route::get('/stream-proxy', [ApiController::class, 'proxyStream'])->name('api.stream-proxy');
-    Route::get('/streams/aynaott/{channel_id}', [ApiController::class, 'playAynaOttStream']);
     Route::get('/streams/redforce/{stream_id}', [ApiController::class, 'playRedforceStream']);
 });
 

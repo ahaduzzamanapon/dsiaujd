@@ -56,8 +56,6 @@ class RunSyncTask extends Command
             $cmd[] = 'fancode:sync';
         } elseif ($task->type === 'bdixtv24') {
             $cmd[] = 'bdixtv24:sync';
-        } elseif ($task->type === 'aynaott') {
-            $cmd[] = 'aynaott:sync';
         } elseif ($task->type === 'redforce') {
             $cmd[] = 'redforce:sync';
         } elseif ($task->type === 'bdix198') {
