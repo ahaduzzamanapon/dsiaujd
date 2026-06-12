@@ -124,6 +124,20 @@ class DashboardController extends Controller
                 'description' => 'Fetch live TV channels and streams from BDIX 198.195.239.50 portal.',
                 'type' => 'bdix198',
                 'url' => null
+            ],
+            [
+                'id' => 11,
+                'name' => 'Smart Duplicate Cleaner',
+                'description' => 'Scan all database channels for duplicates using name similarity matching (85%+), then merge servers and delete duplicates automatically.',
+                'type' => 'clean-duplicates',
+                'url' => null
+            ],
+            [
+                'id' => 12,
+                'name' => 'Gemini AI Duplicate Cleaner',
+                'description' => 'Use Gemini AI to intelligently detect duplicate channels that local matching misses — catches tricky cases like "Star Sports 1 HD" vs "Star Sports 1". Requires GEMINI_API_KEY.',
+                'type' => 'clean-duplicates-ai',
+                'url' => null
             ]
         ];
 
@@ -175,6 +189,12 @@ class DashboardController extends Controller
             $url = null;
         } elseif ($type === 'link-checker') {
             $name = 'Stream Link Checker & Cleaner';
+            $url = null;
+        } elseif ($type === 'clean-duplicates') {
+            $name = 'Smart Duplicate Cleaner';
+            $url = null;
+        } elseif ($type === 'clean-duplicates-ai') {
+            $name = 'Gemini AI Duplicate Cleaner';
             $url = null;
         } else {
             if ($request->ajax()) {

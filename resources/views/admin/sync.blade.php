@@ -52,23 +52,36 @@
                 <h3 class="text-lg font-bold text-white mb-6">Configured Sync Presets</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     @foreach($syncOptions as $option)
-                        @php $isBdixOnly = in_array($option['type'], ['bdix198', 'redforce']); @endphp
-                        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between min-h-[200px]">
+                        @php
+                            $isBdixOnly = in_array($option['type'], ['bdix198', 'redforce']);
+                            $isAiCleaner = $option['type'] === 'clean-duplicates-ai';
+                        @endphp
+                        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between min-h-[200px] {{ $isAiCleaner ? 'border border-purple-500/30 bg-purple-950/10' : '' }}" {{ $isAiCleaner ? 'style=box-shadow:0_0_24px_rgba(168,85,247,0.08)' : '' }}>
                             <div>
                                 <div class="flex items-center justify-between mb-3 font-bold text-white">
-                                    <span class="text-sm">{{ $option['name'] }}</span>
+                                    <span class="text-sm flex items-center gap-2">
+                                        @if($isAiCleaner)
+                                            <span>✨</span>
+                                        @endif
+                                        {{ $option['name'] }}
+                                    </span>
                                     <div class="flex items-center gap-2">
+                                        @if($isAiCleaner)
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 uppercase">Gemini AI</span>
+                                        @endif
                                         @if($isBdixOnly)
                                             <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">BDIX Only</span>
                                         @endif
                                         @if($option['type'] === 'm3u')
                                             <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 uppercase">M3U</span>
-                                        @else
+                                        @elseif(!$isAiCleaner && $option['type'] !== 'clean-duplicates')
                                             <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-pink-500/10 text-pink-400 border border-pink-500/20 uppercase">Scraper</span>
+                                        @elseif($option['type'] === 'clean-duplicates')
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Cleaner</span>
                                         @endif
                                     </div>
                                 </div>
-                                <p class="text-xs text-gray-400 leading-relaxed mb-4">{{ $option['description'] }}</p>
+                                <p class="text-xs {{ $isAiCleaner ? 'text-purple-300/70' : 'text-gray-400' }} leading-relaxed mb-4">{{ $option['description'] }}</p>
                                 @if($option['url'])
                                     <div class="bg-gray-950/60 p-2 rounded-lg border border-gray-900 mb-6 overflow-hidden">
                                         <span class="text-[10px] font-mono text-gray-500 block truncate">{{ $option['url'] }}</span>
@@ -83,12 +96,21 @@
                                     @if($option['url'])
                                         <input type="hidden" name="url" value="{{ $option['url'] }}">
                                     @endif
-                                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gray-900 border border-gray-800 hover:bg-gray-800 hover:border-gray-700 transition-all flex items-center justify-center gap-2">
-                                        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"/>
-                                        </svg>
-                                        <span>Sync Now (Server)</span>
-                                    </button>
+                                    @if($isAiCleaner)
+                                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 border border-purple-500/30 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/10">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                            </svg>
+                                            <span>Run AI Cleaner</span>
+                                        </button>
+                                    @else
+                                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gray-900 border border-gray-800 hover:bg-gray-800 hover:border-gray-700 transition-all flex items-center justify-center gap-2">
+                                            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"/>
+                                            </svg>
+                                            <span>Sync Now{{ $isBdixOnly ? ' (Server)' : '' }}</span>
+                                        </button>
+                                    @endif
                                 </form>
 
                                 @if($isBdixOnly)
