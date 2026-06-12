@@ -130,6 +130,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
     // Sync Console Routes
     Route::get('sync', [DashboardController::class, 'syncConsole'])->name('sync.index');
     Route::post('sync/run', [DashboardController::class, 'runSync'])->name('sync.run');
+    Route::post('sync/paste', [DashboardController::class, 'bdixPasteSync'])->name('sync.paste');
     Route::get('sync/tasks', [DashboardController::class, 'getSyncTasks'])->name('sync.tasks');
     Route::get('sync/tasks/{id}/log', [DashboardController::class, 'getSyncTaskLog'])->name('sync.log');
     Route::post('sync/clear-history', [DashboardController::class, 'clearSyncHistory'])->name('sync.clear-history');

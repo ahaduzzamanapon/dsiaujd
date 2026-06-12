@@ -52,15 +52,21 @@
                 <h3 class="text-lg font-bold text-white mb-6">Configured Sync Presets</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     @foreach($syncOptions as $option)
+                        @php $isBdixOnly = in_array($option['type'], ['bdix198', 'redforce']); @endphp
                         <div class="glass-card p-6 rounded-2xl flex flex-col justify-between min-h-[200px]">
                             <div>
                                 <div class="flex items-center justify-between mb-3 font-bold text-white">
                                     <span class="text-sm">{{ $option['name'] }}</span>
-                                    @if($option['type'] === 'm3u')
-                                        <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 uppercase">M3U</span>
-                                    @else
-                                        <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-pink-500/10 text-pink-400 border border-pink-500/20 uppercase">Scraper</span>
-                                    @endif
+                                    <div class="flex items-center gap-2">
+                                        @if($isBdixOnly)
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">BDIX Only</span>
+                                        @endif
+                                        @if($option['type'] === 'm3u')
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 uppercase">M3U</span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-semibold bg-pink-500/10 text-pink-400 border border-pink-500/20 uppercase">Scraper</span>
+                                        @endif
+                                    </div>
                                 </div>
                                 <p class="text-xs text-gray-400 leading-relaxed mb-4">{{ $option['description'] }}</p>
                                 @if($option['url'])
@@ -69,25 +75,79 @@
                                     </div>
                                 @endif
                             </div>
-                            
-                            <form action="{{ route('admin.sync.run') }}" method="POST" class="w-full">
-                                @csrf
-                                <input type="hidden" name="type" value="{{ $option['type'] }}">
-                                @if($option['url'])
-                                    <input type="hidden" name="url" value="{{ $option['url'] }}">
+
+                            <div class="space-y-2">
+                                <form action="{{ route('admin.sync.run') }}" method="POST" class="w-full">
+                                    @csrf
+                                    <input type="hidden" name="type" value="{{ $option['type'] }}">
+                                    @if($option['url'])
+                                        <input type="hidden" name="url" value="{{ $option['url'] }}">
+                                    @endif
+                                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gray-900 border border-gray-800 hover:bg-gray-800 hover:border-gray-700 transition-all flex items-center justify-center gap-2">
+                                        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"/>
+                                        </svg>
+                                        <span>Sync Now (Server)</span>
+                                    </button>
+                                </form>
+
+                                @if($isBdixOnly)
+                                {{-- Browser-Assisted Paste Sync --}}
+                                <div class="mt-1">
+                                    <button type="button"
+                                        onclick="togglePastePanel('paste-{{ $option['type'] }}')"
+                                        class="w-full py-2 px-4 rounded-xl font-semibold text-xs text-amber-300 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                        </svg>
+                                        Paste & Sync (Browser)
+                                    </button>
+
+                                    <div id="paste-{{ $option['type'] }}" class="hidden mt-3 space-y-2">
+                                        @if($option['type'] === 'bdix198')
+                                            <p class="text-[10px] text-amber-400/80 leading-relaxed">
+                                                ১. Browser-এ <a href="http://198.195.239.50/tv_channels.json" target="_blank" class="underline hover:text-amber-300">198.195.239.50/tv_channels.json</a> খুলুন<br>
+                                                ২. সব JSON text copy করুন (Ctrl+A → Ctrl+C)<br>
+                                                ৩. নিচের box-এ paste করুন → Sync করুন
+                                            </p>
+                                            <textarea id="paste-area-{{ $option['type'] }}"
+                                                rows="5"
+                                                placeholder='{"channels": [...]}  ← JSON paste করুন এখানে'
+                                                class="w-full bg-gray-950/70 border border-amber-500/20 text-gray-300 rounded-xl px-3 py-2 text-[10px] font-mono focus:outline-none focus:border-amber-400/50 resize-none placeholder:text-gray-600"></textarea>
+                                        @else
+                                            <p class="text-[10px] text-amber-400/80 leading-relaxed">
+                                                ১. Browser-এ <a href="http://redforce.live/" target="_blank" class="underline hover:text-amber-300">redforce.live</a> খুলুন<br>
+                                                ২. <strong>Ctrl+U</strong> চাপুন (View Page Source)<br>
+                                                ৩. সব HTML copy করুন (Ctrl+A → Ctrl+C)<br>
+                                                ৪. নিচের box-এ paste করুন → Sync করুন
+                                            </p>
+                                            <textarea id="paste-area-{{ $option['type'] }}"
+                                                rows="5"
+                                                placeholder="RedForce homepage HTML এখানে paste করুন..."
+                                                class="w-full bg-gray-950/70 border border-amber-500/20 text-gray-300 rounded-xl px-3 py-2 text-[10px] font-mono focus:outline-none focus:border-amber-400/50 resize-none placeholder:text-gray-600"></textarea>
+                                        @endif
+
+                                        <div id="paste-result-{{ $option['type'] }}" class="hidden text-[10px] font-medium px-3 py-2 rounded-lg"></div>
+
+                                        <button type="button"
+                                            onclick="runPasteSync('{{ $option['type'] }}', '{{ csrf_token() }}')"
+                                            id="paste-btn-{{ $option['type'] }}"
+                                            class="w-full py-2 px-4 rounded-xl font-semibold text-xs text-white bg-amber-500/80 hover:bg-amber-500 border border-amber-500/40 transition-all flex items-center justify-center gap-2">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            Import & Sync Now
+                                        </button>
+                                    </div>
+                                </div>
                                 @endif
-                                <button type="submit" class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gray-900 border border-gray-800 hover:bg-gray-800 hover:border-gray-700 transition-all flex items-center justify-center gap-2">
-                                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"/>
-                                    </svg>
-                                    <span>Sync Now</span>
-                                </button>
-                            </form>
+                            </div>
                         </div>
                     @endforeach
                 </div>
             </div>
         </div>
+
 
         <!-- Right Side: Sync Tasks Monitor -->
         <div class="lg:col-span-1">
@@ -542,6 +602,63 @@
     function ucfirst(str) {
         if (!str) return '';
         return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function togglePastePanel(id) {
+        const panel = document.getElementById(id);
+        if (panel) panel.classList.toggle('hidden');
+    }
+
+    function runPasteSync(type, token) {
+        const textarea = document.getElementById('paste-area-' + type);
+        const resultDiv = document.getElementById('paste-result-' + type);
+        const btn = document.getElementById('paste-btn-' + type);
+
+        const rawData = textarea ? textarea.value.trim() : '';
+        if (!rawData) {
+            resultDiv.className = 'text-[10px] font-medium px-3 py-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20';
+            resultDiv.textContent = 'Please paste the data first.';
+            resultDiv.classList.remove('hidden');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full"></span> Syncing...`;
+        resultDiv.classList.add('hidden');
+
+        fetch('{{ route("admin.sync.paste") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token
+            },
+            body: JSON.stringify({ type: type, raw_data: rawData })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Import & Sync Now`;
+
+            if (data.success) {
+                resultDiv.className = 'text-[10px] font-medium px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                resultDiv.textContent = '✓ ' + data.message;
+                textarea.value = '';
+                showToast(data.message, 'success');
+            } else {
+                resultDiv.className = 'text-[10px] font-medium px-3 py-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                resultDiv.textContent = '✗ ' + (data.error || 'Sync failed.');
+            }
+            resultDiv.classList.remove('hidden');
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Import & Sync Now`;
+            resultDiv.className = 'text-[10px] font-medium px-3 py-2 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20';
+            resultDiv.textContent = '✗ Network error. Please try again.';
+            resultDiv.classList.remove('hidden');
+            console.error(err);
+        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\SyncTask;
 use App\Models\Device;
+use App\Services\StreamDeduplicator;
 
 class DashboardController extends Controller
 {
@@ -308,5 +309,131 @@ class DashboardController extends Controller
             }
             return back()->with('error', 'Failed to clear sync history: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Browser-Assisted Sync: Accept raw data pasted from browser for BDIX-only sources.
+     * Supports: bdix198 (JSON) and redforce (HTML)
+     */
+    public function bdixPasteSync(Request $request)
+    {
+        $type = $request->input('type');
+        $rawData = trim($request->input('raw_data', ''));
+
+        if (empty($rawData)) {
+            return response()->json(['error' => 'No data provided. Please paste the raw content.'], 422);
+        }
+
+        try {
+            if ($type === 'bdix198') {
+                $result = $this->processBdix198Json($rawData);
+            } elseif ($type === 'redforce') {
+                $result = $this->processRedforceHtml($rawData);
+            } else {
+                return response()->json(['error' => 'Unsupported paste sync type.'], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'imported' => $result['imported'],
+                'skipped'  => $result['skipped'],
+                'message'  => "Sync complete! Imported/updated {$result['imported']} channels" . ($result['skipped'] ? ", skipped {$result['skipped']}" : '') . '.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Sync failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function processBdix198Json(string $json): array
+    {
+        $data = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('Invalid JSON: ' . json_last_error_msg());
+        }
+
+        $channels = $data['channels'] ?? $data;
+        if (!is_array($channels)) {
+            throw new \Exception('JSON does not contain a channels array.');
+        }
+
+        $imported = 0;
+        $skipped  = 0;
+
+        foreach ($channels as $ch) {
+            if (isset($ch['status']) && $ch['status'] === 'hidden') {
+                $skipped++;
+                continue;
+            }
+
+            $name = trim($ch['name'] ?? '');
+            $url  = $ch['url'] ?? '';
+            if (empty($name) || empty($url)) {
+                $skipped++;
+                continue;
+            }
+
+            $logoPath = $ch['logo'] ?? '';
+            $logoUrl  = '';
+            if (!empty($logoPath)) {
+                $logoUrl = str_starts_with($logoPath, 'http')
+                    ? $logoPath
+                    : 'http://198.195.239.50/' . ltrim($logoPath, '/');
+            }
+
+            $categoryName = $ch['category'] ?? 'Live Channel';
+
+            StreamDeduplicator::syncChannelWithDeduplication(
+                $name,
+                $logoUrl ?: null,
+                'BDIX 198',
+                $url,
+                'http://198.195.239.50/',
+                'http://198.195.239.50',
+                $categoryName
+            );
+
+            $imported++;
+        }
+
+        return compact('imported', 'skipped');
+    }
+
+    private function processRedforceHtml(string $html): array
+    {
+        $pattern = '/<li class="([^"]+)">\s*<a[^>]+onclick="[^"]*player\.php\?stream=(\d+)[^"]*"[^>]*>\s*<img[^>]+src="([^"]+)"[^>]+alt="([^"]+)"/s';
+
+        if (!preg_match_all($pattern, $html, $matches, PREG_SET_ORDER)) {
+            throw new \Exception('No channels matched the scraping pattern. Make sure you pasted the full RedForce homepage HTML.');
+        }
+
+        $imported = 0;
+        $skipped  = 0;
+
+        foreach ($matches as $match) {
+            $classes      = explode(' ', $match[1]);
+            $categoryName = trim($classes[0] !== 'All' ? $classes[0] : ($classes[1] ?? 'Live Channel'));
+            if (empty($categoryName) || strtolower($categoryName) === 'all') {
+                $categoryName = 'Live Channel';
+            }
+
+            $streamId = $match[2];
+            $logoPath = ltrim($match[3], '/');
+            $logoUrl  = 'http://redforce.live/' . $logoPath;
+            $name     = html_entity_decode(trim($match[4]));
+
+            StreamDeduplicator::syncChannelWithDeduplication(
+                $name,
+                $logoUrl,
+                'RedForce',
+                '/api/streams/redforce/' . $streamId,
+                'http://redforce.live/',
+                'http://redforce.live',
+                $categoryName
+            );
+
+            $imported++;
+        }
+
+        return compact('imported', 'skipped');
     }
 }
