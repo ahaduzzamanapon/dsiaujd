@@ -109,6 +109,20 @@ class DashboardController extends Controller
                 'description' => 'Fetch live channels and all working streaming servers from BDIXTV24.com.',
                 'type' => 'bdixtv24',
                 'url' => null
+            ],
+            [
+                'id' => 9,
+                'name' => 'AynaOTT Scraper',
+                'description' => 'Fetch BD live channels and all working streaming servers from AynaOTT.',
+                'type' => 'aynaott',
+                'url' => null
+            ],
+            [
+                'id' => 10,
+                'name' => 'RedForce Scraper',
+                'description' => 'Fetch live channels and all working streaming servers from RedForce.live.',
+                'type' => 'redforce',
+                'url' => null
             ]
         ];
 
@@ -151,6 +165,12 @@ class DashboardController extends Controller
             $url = null;
         } elseif ($type === 'bdixtv24') {
             $name = 'BDIXTV24 Scraper';
+            $url = null;
+        } elseif ($type === 'aynaott') {
+            $name = 'AynaOTT Scraper';
+            $url = null;
+        } elseif ($type === 'redforce') {
+            $name = 'RedForce Scraper';
             $url = null;
         } elseif ($type === 'link-checker') {
             $name = 'Stream Link Checker & Cleaner';

@@ -142,61 +142,21 @@ class SyncBdixtv24 extends Command
         return 0;
     }
 
-    /**
-     * Import or update channel & servers.
-     */
     private function syncChannel(string $name, ?string $logo, array $servers)
     {
-        $stream = Stream::where('name', $name)->first();
-
-        $isSports = false;
-        $nameLower = strtolower($name);
-        if (
-            str_contains($nameLower, 'sport') ||
-            str_contains($nameLower, 'cricket') ||
-            str_contains($nameLower, 'football') ||
-            str_contains($nameLower, 'willow') ||
-            str_contains($nameLower, 'espn') ||
-            str_contains($nameLower, 'fifa') ||
-            str_contains($nameLower, 'premier league')
-        ) {
-            $isSports = true;
-        }
-
-        if (!$stream) {
-            $stream = Stream::create([
-                'name' => $name,
-                'logo' => $logo ?: null,
-                'sport_type' => 'other',
-                'is_permanent' => true,
-                'show_in_events' => false,
-                'show_in_sports' => $isSports,
-                'show_in_tv' => true,
-                'is_active' => true,
-            ]);
-
-            $category = Category::firstOrCreate(['name' => 'Live Channel']);
-            $stream->categories()->syncWithoutDetaching([$category->id]);
-        }
-
-        $existingServersCount = $stream->servers()->count();
         foreach ($servers as $idx => $srv) {
             $srvUrl = $srv['url'];
-            $srvName = $srv['name'] ?: ('Server ' . ($existingServersCount + $idx + 1));
+            $srvName = $srv['name'] ?: 'BDIXTV24 Server';
 
-            // Check if server with this URL already exists for this stream
-            $serverExists = StreamServer::where('stream_id', $stream->id)->where('url', $srvUrl)->exists();
-            if (!$serverExists) {
-                StreamServer::create([
-                    'stream_id' => $stream->id,
-                    'name' => $srvName,
-                    'stream_type' => 'm3u8',
-                    'url' => $srvUrl,
-                    'http_referer' => 'https://bdixtv24.com/',
-                    'http_origin' => 'https://bdixtv24.com',
-                    'order' => $existingServersCount + $idx,
-                ]);
-            }
+            \App\Services\StreamDeduplicator::syncChannelWithDeduplication(
+                $name,
+                $logo,
+                $srvName,
+                $srvUrl,
+                'https://bdixtv24.com/',
+                'https://bdixtv24.com',
+                'Live Channel'
+            );
         }
     }
 }

@@ -309,5 +309,113 @@ class ApiController extends Controller
 
         return $scheme . '://' . $host . $port . $dir . '/' . $relative;
     }
+
+    /**
+     * Play AynaOTT stream by dynamically signing the URL with client IP.
+     */
+    public function playAynaOttStream($channelId, Request $request)
+    {
+        // 1. Determine client IP address
+        $clientIp = $request->header('X-Forwarded-For') ?: $request->ip();
+        $clientIp = explode(',', $clientIp)[0];
+
+        // If it's a private or local IP, resolve the public IP
+        if (!filter_var($clientIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            try {
+                $clientIp = \Illuminate\Support\Facades\Http::get('http://ip-api.com/json/')->json()['query'] ?? $clientIp;
+            } catch (\Exception $e) {
+                // Keep local ip
+            }
+        }
+
+        // 2. Fetch Akamai Key and Channels list (cached for 6 hours)
+        $akamaiKey = cache()->remember('aynaott_akamai_key', 21600, function () {
+            $keyUrl = 'https://cloudtv.akamaized.net/AynaOTT/BDcontent/BD/products/66e88378c4ae462999bf0159_product.json';
+            $res = \Illuminate\Support\Facades\Http::get($keyUrl);
+            return $res->json()['player']['token']['akamai_key'] ?? null;
+        });
+
+        $channels = cache()->remember('aynaott_channels', 21600, function () {
+            $channelsUrl = 'https://cloudtv.akamaized.net/AynaOTT/BDcontent/channels/bundles/652fcf82a2649538da6fc6e3_bundle.json';
+            $response = \Illuminate\Support\Facades\Http::get($channelsUrl);
+            $data = $response->json()['data'][0] ?? null;
+            $list = [];
+            
+            if ($data && isset($data['categories'])) {
+                foreach ($data['categories'] as $category) {
+                    if (str_contains(json_encode($category), 'ALL')) {
+                        foreach ($category['channels'] as $channel) {
+                            $list[$channel['_id']] = $channel['streams']['channels']['urls']['ios_tvos'];
+                        }
+                    }
+                }
+            }
+            return $list;
+        });
+
+        if (!$akamaiKey) {
+            return response('Failed to load Akamai Key from AynaOTT API', 500);
+        }
+
+        // 3. Find stream URL
+        $streamUrl = $channels[$channelId] ?? null;
+        if (!$streamUrl) {
+            return response('Channel not found in AynaOTT bundle', 404);
+        }
+
+        // 4. Generate signed stream URL using client IP
+        $signedUrl = $this->hmacHashSign($streamUrl, 'byte-capsule', $clientIp, $akamaiKey);
+
+        // 5. Redirect client directly to the signed Akamai CDN URL
+        return redirect()->away($signedUrl);
+    }
+
+    /**
+     * Generate signed URL using HMAC SHA256 and hex-encoded Akamai key.
+     */
+    private function hmacHashSign($streamUrl, $signature, $ipAddress, $akamaiKey)
+    {
+        $time = time();
+        $exp = $time + 43200; // 12 hours validity
+        $queryParameterData = "st={$time}~exp={$exp}~acl=/{$signature}/*~data={$ipAddress}-WEB";
+        
+        $keyBin = hex2bin($akamaiKey);
+        $hmacHash = hash_hmac('sha256', $queryParameterData, $keyBin);
+        
+        return $streamUrl . "?hdnts=" . $queryParameterData . "~hmac=" . $hmacHash;
+    }
+
+    /**
+     * Play RedForce stream by dynamically parsing the live source URL.
+     */
+    public function playRedforceStream($streamId)
+    {
+        $url = "http://redforce.live/player.php?stream={$streamId}";
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer' => 'http://redforce.live/',
+            ])->timeout(6)->get($url);
+
+            if (!$response->successful()) {
+                return response('Failed to load RedForce player page', 502);
+            }
+
+            $html = $response->body();
+            
+            // Regex to find primarySource variable value
+            $pattern = '/var\s+primarySource\s*=\s*[\'"]([^\'"]+)[\'"]/s';
+
+            if (preg_match($pattern, $html, $matches)) {
+                $realM3u8Url = $matches[1];
+                return redirect()->away($realM3u8Url);
+            }
+
+            return response('Stream source not found in page payload', 404);
+
+        } catch (\Exception $e) {
+            return response('Error loading RedForce stream: ' . $e->getMessage(), 500);
+        }
+    }
 }
 

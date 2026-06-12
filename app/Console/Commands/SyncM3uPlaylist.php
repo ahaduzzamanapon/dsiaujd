@@ -167,60 +167,16 @@ class SyncM3uPlaylist extends Command
             $isSports = true;
         }
 
-        // 3. Rule: If same Stream Name exists, add as a new server.
-        $existingStream = Stream::where('name', $streamData['name'])->first();
-
-        if ($existingStream) {
-            $existingServersCount = $existingStream->servers()->count();
-            
-            StreamServer::create([
-                'stream_id' => $existingStream->id,
-                'name' => 'Server ' . ($existingServersCount + 1),
-                'stream_type' => 'm3u8',
-                'url' => $url,
-                'http_referer' => $referer,
-                'http_origin' => $origin,
-                'order' => $existingServersCount,
-            ]);
-
-            // Ensure categories are synced
-            $category = Category::firstOrCreate(['name' => $categoryName]);
-            $existingStream->categories()->syncWithoutDetaching([$category->id]);
-
-            // If it belongs to a sports group, make sure it is flagged to show in sports
-            if ($isSports && !$existingStream->show_in_sports) {
-                $existingStream->update(['show_in_sports' => true]);
-            }
-            
-            return 'imported';
-        }
-
-        // 4. Create new Stream
-        $stream = Stream::create([
-            'name' => $streamData['name'],
-            'logo' => $streamData['logo'] ?: null,
-            'sport_type' => $isSports ? 'other' : 'other', // default category mapping
-            'is_permanent' => true,
-            'show_in_events' => false,
-            'show_in_sports' => $isSports,
-            'show_in_tv' => true,
-            'is_active' => true,
-        ]);
-
-        // Create its first server
-        StreamServer::create([
-            'stream_id' => $stream->id,
-            'name' => 'Server 1',
-            'stream_type' => 'm3u8',
-            'url' => $url,
-            'http_referer' => $referer,
-            'http_origin' => $origin,
-            'order' => 0,
-        ]);
-
-        // Link to category
-        $category = Category::firstOrCreate(['name' => $categoryName]);
-        $stream->categories()->syncWithoutDetaching([$category->id]);
+        // 3. Rule: Use StreamDeduplicator to find/create stream and link server
+        \App\Services\StreamDeduplicator::syncChannelWithDeduplication(
+            $streamData['name'],
+            $streamData['logo'],
+            'Server',
+            $url,
+            $referer,
+            $origin,
+            $categoryName
+        );
 
         return 'imported';
     }
