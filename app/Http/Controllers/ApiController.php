@@ -271,9 +271,14 @@ class ApiController extends Controller
                         // Video segment (.ts) or sub-playlist URL
                         $absoluteUrl = $this->resolveAbsoluteUrl($url, $line);
                         
-                        // Rewrite the URL to relative proxy path to maintain origin & protocol (HTTP -> HTTPS)
-                        $proxyUrl = '/api/stream-proxy?url=' . urlencode($absoluteUrl);
-                        $rewrittenLines[] = $proxyUrl;
+                        if (str_contains($absoluteUrl, '.m3u8') || str_contains($absoluteUrl, '.m3u')) {
+                            // Rewrite sub-playlist to go through proxy
+                            $proxyUrl = '/api/stream-proxy?url=' . urlencode($absoluteUrl);
+                            $rewrittenLines[] = $proxyUrl;
+                        } else {
+                            // Video segment - return absolute URL directly so the browser streams it directly
+                            $rewrittenLines[] = $absoluteUrl;
+                        }
                     }
                 }
                 

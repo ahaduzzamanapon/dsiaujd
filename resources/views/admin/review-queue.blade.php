@@ -37,15 +37,29 @@
             <p class="text-xs text-gray-400 mt-1"><span id="queue-counter" class="text-white font-bold">{{ $totalCount }}</span> streams waiting for review</p>
         </div>
         
-        <form action="{{ route('admin.review-queue.reject-all') }}" method="POST" id="reject-all-form" onsubmit="return confirmRejectAll(event)">
-            @csrf
-            <button type="submit" class="py-2.5 px-4 rounded-xl font-semibold text-xs text-rose-400 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
-                Reject All Streams
-            </button>
-        </form>
+        <div class="flex items-center gap-3">
+            <!-- Approve All Form -->
+            <form action="{{ route('admin.review-queue.approve-all') }}" method="POST" id="approve-all-form" onsubmit="return confirmApproveAll(event)">
+                @csrf
+                <button type="submit" class="py-2.5 px-4 rounded-xl font-semibold text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 transition-all flex items-center gap-1.5 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Approve & Publish All
+                </button>
+            </form>
+
+            <!-- Reject All Form -->
+            <form action="{{ route('admin.review-queue.reject-all') }}" method="POST" id="reject-all-form" onsubmit="return confirmRejectAll(event)">
+                @csrf
+                <button type="submit" class="py-2.5 px-4 rounded-xl font-semibold text-xs text-rose-400 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Reject All Streams
+                </button>
+            </form>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -141,8 +155,8 @@
 
                     <div class="space-y-3 bg-gray-950/60 p-4 rounded-xl border border-gray-900 text-xs font-mono">
                         <div class="flex flex-col gap-1.5">
-                            <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Stream URL</span>
-                            <span id="active-url" class="text-gray-300 break-all select-all">None</span>
+                            <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Stream URL (Click to open & test in new tab)</span>
+                            <a id="active-url" href="#" target="_blank" class="text-cyan-400 hover:underline break-all select-all">None</a>
                         </div>
                         <div class="flex flex-col gap-1.5">
                             <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">HTTP Referer</span>
@@ -235,7 +249,9 @@
         // Update active details panel
         document.getElementById('active-name').innerText = name;
         document.getElementById('active-logo').src = logo;
-        document.getElementById('active-url').innerText = url;
+        const urlEl = document.getElementById('active-url');
+        urlEl.innerText = url;
+        urlEl.href = url;
         document.getElementById('active-referer').innerText = referer;
         document.getElementById('active-origin').innerText = origin;
         document.getElementById('active-source').innerText = source;
@@ -286,6 +302,10 @@
             const needsMixedContentProxy = (isIp || isBdix) && isHttps && isHttp;
 
             if (needsHeaderProxy || needsMixedContentProxy || (isHttps && isHttp && !isIp && !isBdix)) {
+                // Use the Vercel proxy on live site to bypass hosting port blocks (e.g. port 1686)
+                if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                    return `https://livetvbd-delta.vercel.app/api/stream-proxy?url=${encodeURIComponent(streamUrl)}`;
+                }
                 return `/api/stream-proxy?url=${encodeURIComponent(streamUrl)}`;
             }
             return streamUrl;
@@ -483,6 +503,15 @@
     function confirmRejectAll(event) {
         event.preventDefault();
         if (confirm('Are you sure you want to REJECT and DELETE ALL pending streams in the queue? This action cannot be undone.')) {
+            const form = event.currentTarget;
+            form.submit();
+        }
+        return false;
+    }
+
+    function confirmApproveAll(event) {
+        event.preventDefault();
+        if (confirm('Are you sure you want to APPROVE and PUBLISH ALL pending streams in the queue? This will make them live in the app.')) {
             const form = event.currentTarget;
             form.submit();
         }

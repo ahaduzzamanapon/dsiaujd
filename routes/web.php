@@ -145,4 +145,5 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
     Route::post('review-queue/{id}/approve', [PendingStreamController::class, 'approve'])->name('review-queue.approve');
     Route::post('review-queue/{id}/reject', [PendingStreamController::class, 'reject'])->name('review-queue.reject');
     Route::post('review-queue/reject-all', [PendingStreamController::class, 'rejectAll'])->name('review-queue.reject-all');
+    Route::post('review-queue/approve-all', [PendingStreamController::class, 'approveAll'])->name('review-queue.approve-all');
 });

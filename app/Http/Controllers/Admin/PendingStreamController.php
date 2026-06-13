@@ -79,4 +79,32 @@ class PendingStreamController extends Controller
         }
         return back()->with('success', "{$count} pending streams cleared.");
     }
+
+    /**
+     * Approve all pending streams at once.
+     */
+    public function approveAll(Request $request)
+    {
+        $pendingStreams = PendingStream::all();
+        $count = $pendingStreams->count();
+
+        foreach ($pendingStreams as $pending) {
+            try {
+                StreamDeduplicator::syncChannelWithDeduplication(
+                    $pending->name,
+                    $pending->logo,
+                    'Server',
+                    $pending->url,
+                    $pending->http_referer,
+                    $pending->http_origin,
+                    $pending->category ?? 'Live Channel'
+                );
+                $pending->delete();
+            } catch (\Exception $e) {
+                // Ignore single errors, continue approving others
+            }
+        }
+
+        return back()->with('success', "{$count} streams approved and are now live.");
+    }
 }
