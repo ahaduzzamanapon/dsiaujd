@@ -8,6 +8,11 @@ class PromoBanner extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+        'order' => 'integer',
+    ];
+
     public function stream1()
     {
         return $this->belongsTo(Stream::class, 'stream1_id');

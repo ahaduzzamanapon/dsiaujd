@@ -8,6 +8,11 @@ class StreamServer extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'stream_id' => 'integer',
+        'order' => 'integer',
+    ];
+
     public function stream()
     {
         return $this->belongsTo(Stream::class);
