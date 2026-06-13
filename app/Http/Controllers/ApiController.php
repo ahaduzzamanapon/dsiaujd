@@ -223,14 +223,36 @@ class ApiController extends Controller
             $headers = [
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             ];
-            
-            // Auto-forward referer/origin for BDIX/BDIXTV servers if needed
-            if (str_contains($url, '198.195.')) {
-                $headers['Referer'] = 'http://198.195.239.50/';
-                $headers['Origin'] = 'http://198.195.239.50';
-            } elseif (str_contains($url, 'bdixtv24') || str_contains($url, 'bdix')) {
-                $headers['Referer'] = 'https://bdixtv24.com/';
-                $headers['Origin'] = 'https://bdixtv24.com';
+
+            // 1. Try to find the stream server in the database to fetch configured headers
+            $server = \App\Models\StreamServer::where('url', $url)->first();
+            if ($server) {
+                if ($server->http_referer) {
+                    $headers['Referer'] = $server->http_referer;
+                }
+                if ($server->http_origin) {
+                    $headers['Origin'] = $server->http_origin;
+                }
+            }
+
+            // 2. Fallbacks / Hardcoded rules for untracked / sub-segment URLs (like .ts chunks)
+            if (!isset($headers['Referer']) || !isset($headers['Origin'])) {
+                if (str_contains($url, '198.195.')) {
+                    $headers['Referer'] = 'http://198.195.239.50/';
+                    $headers['Origin'] = 'http://198.195.239.50';
+                } elseif (str_contains($url, 'bdixtv24') || str_contains($url, 'bdix')) {
+                    $headers['Referer'] = 'https://bdixtv24.com/';
+                    $headers['Origin'] = 'https://bdixtv24.com';
+                } elseif (str_contains($url, 'zohanayaan.com') || str_contains($url, 'executeandship.com')) {
+                    $headers['Referer'] = 'https://executeandship.com/';
+                    $headers['Origin'] = 'https://executeandship.com';
+                } elseif (str_contains($url, 'fancode.com')) {
+                    $headers['Referer'] = 'https://fancode.com/';
+                    $headers['Origin'] = 'https://fancode.com';
+                } elseif (str_contains($url, 'redforce.live')) {
+                    $headers['Referer'] = 'http://redforce.live/';
+                    $headers['Origin'] = 'http://redforce.live';
+                }
             }
 
             $response = \Illuminate\Support\Facades\Http::withHeaders($headers)

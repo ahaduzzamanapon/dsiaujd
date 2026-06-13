@@ -66,7 +66,7 @@ class CheckStreamLinks extends Command
                 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
                 curl_setopt($ch, CURLOPT_MAXREDIRS, 2);
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($ch, CURLOPT_NOBODY, true); // HEAD request
+                // Standard GET request since some streams block HEAD requests
                 
                 $headers = [
                     'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',

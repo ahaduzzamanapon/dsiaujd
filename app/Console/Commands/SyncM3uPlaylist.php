@@ -208,15 +208,12 @@ class SyncM3uPlaylist extends Command
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             
-            // Set range header to request only first 100 bytes of the stream manifest/file
-            curl_setopt($ch, CURLOPT_RANGE, '0-100');
-
             curl_exec($ch);
             $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            // 200 OK or 206 Partial Content (returned due to the Range header)
-            return $statusCode === 200 || $statusCode === 206;
+            // 200-399 success/redirect status codes or 403 (for token/auth restricted pages)
+            return ($statusCode >= 200 && $statusCode < 400) || $statusCode === 403;
         } catch (\Exception $e) {
             return false;
         }
