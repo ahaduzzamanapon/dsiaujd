@@ -9,6 +9,32 @@ use App\Models\StreamServer;
 class StreamDeduplicator
 {
     /**
+     * Check if two names match a known conflict pair (e.g. PTV Sports vs TVS Sports).
+     */
+    public static function isKnownConflict(string $name1, string $name2): bool
+    {
+        $n1 = self::normalizeName($name1);
+        $n2 = self::normalizeName($name2);
+        
+        $conflictingPairs = [
+            ['ptvsports', 'tvssports'],
+            ['ptvsports', 'tsports'],
+            ['tensports', 'tsports'],
+            ['tensports', 'tvssports'],
+            ['ptv', 'tvs'],
+            ['ptv', 'tsports'],
+        ];
+        
+        foreach ($conflictingPairs as $pair) {
+            if (($n1 === $pair[0] && $n2 === $pair[1]) || ($n1 === $pair[1] && $n2 === $pair[0])) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * Normalize channel name by removing spaces, non-alphanumeric chars, and noise words.
      */
     public static function normalizeName(string $name): string
@@ -214,6 +240,9 @@ class StreamDeduplicator
                     
                     similar_text($normalizedDb, $normalizedNew, $percent);
                     if ($percent >= 85) {
+                        if (self::isKnownConflict($dbStream->name, $name)) {
+                            continue;
+                        }
                         if (!self::hasConflictingNumbers($normalizedDb, $normalizedNew)) {
                             $matchedStream = $dbStream;
                             break;
