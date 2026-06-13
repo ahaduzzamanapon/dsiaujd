@@ -72,11 +72,13 @@ class CheckStreamLinks extends Command
                     'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 ];
 
-                if ($server->http_referer) {
-                    curl_setopt($ch, CURLOPT_REFERER, $server->http_referer);
+                $resolved = \App\Models\StreamServer::resolveHeadersForUrl($url, $server->http_referer, $server->http_origin);
+
+                if (!empty($resolved['referer'])) {
+                    curl_setopt($ch, CURLOPT_REFERER, $resolved['referer']);
                 }
-                if ($server->http_origin) {
-                    $headers[] = "Origin: {$server->http_origin}";
+                if (!empty($resolved['origin'])) {
+                    $headers[] = "Origin: {$resolved['origin']}";
                 }
 
                 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);

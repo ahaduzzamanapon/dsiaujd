@@ -226,33 +226,17 @@ class ApiController extends Controller
 
             // 1. Try to find the stream server in the database to fetch configured headers
             $server = \App\Models\StreamServer::where('url', $url)->first();
-            if ($server) {
-                if ($server->http_referer) {
-                    $headers['Referer'] = $server->http_referer;
-                }
-                if ($server->http_origin) {
-                    $headers['Origin'] = $server->http_origin;
-                }
-            }
+            $referer = $server ? $server->http_referer : null;
+            $origin = $server ? $server->http_origin : null;
 
-            // 2. Fallbacks / Hardcoded rules for untracked / sub-segment URLs (like .ts chunks)
-            if (!isset($headers['Referer']) || !isset($headers['Origin'])) {
-                if (str_contains($url, '198.195.')) {
-                    $headers['Referer'] = 'http://198.195.239.50/';
-                    $headers['Origin'] = 'http://198.195.239.50';
-                } elseif (str_contains($url, 'bdixtv24') || str_contains($url, 'bdix')) {
-                    $headers['Referer'] = 'https://bdixtv24.com/';
-                    $headers['Origin'] = 'https://bdixtv24.com';
-                } elseif (str_contains($url, 'zohanayaan.com') || str_contains($url, 'executeandship.com')) {
-                    $headers['Referer'] = 'https://executeandship.com/';
-                    $headers['Origin'] = 'https://executeandship.com';
-                } elseif (str_contains($url, 'fancode.com')) {
-                    $headers['Referer'] = 'https://fancode.com/';
-                    $headers['Origin'] = 'https://fancode.com';
-                } elseif (str_contains($url, 'redforce.live')) {
-                    $headers['Referer'] = 'http://redforce.live/';
-                    $headers['Origin'] = 'http://redforce.live';
-                }
+            // 2. Resolve headers dynamically using the unified StreamServer helper
+            $resolved = \App\Models\StreamServer::resolveHeadersForUrl($url, $referer, $origin);
+
+            if (!empty($resolved['referer'])) {
+                $headers['Referer'] = $resolved['referer'];
+            }
+            if (!empty($resolved['origin'])) {
+                $headers['Origin'] = $resolved['origin'];
             }
 
             $response = \Illuminate\Support\Facades\Http::withHeaders($headers)

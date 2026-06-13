@@ -130,6 +130,14 @@ class SyncCricHdApiJson extends Command
      */
     private function checkLink(string $url, ?string $referer = null, ?string $origin = null): bool
     {
+        $resolved = \App\Models\StreamServer::resolveHeadersForUrl($url, $referer, $origin);
+        $referer = $resolved['referer'];
+        $origin = $resolved['origin'];
+
+        $this->info("  Checking link: {$url}");
+        if ($referer) $this->info("    Referer: {$referer}");
+        if ($origin) $this->info("    Origin: {$origin}");
+
         try {
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -152,13 +160,20 @@ class SyncCricHdApiJson extends Command
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             
-            curl_exec($ch);
+            $res = curl_exec($ch);
             $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
             curl_close($ch);
+
+            $this->info("    Status Code: {$statusCode}");
+            if ($err) {
+                $this->error("    Curl Error: {$err}");
+            }
 
             // 200-399 success/redirect status codes or 403 (for token/auth restricted pages)
             return ($statusCode >= 200 && $statusCode < 400) || $statusCode === 403;
         } catch (\Exception $e) {
+            $this->error("    Exception: " . $e->getMessage());
             return false;
         }
     }
