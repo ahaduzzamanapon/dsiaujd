@@ -165,6 +165,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
     let hls = null;
     let selectedId = null;
