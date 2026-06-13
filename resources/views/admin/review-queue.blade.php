@@ -289,6 +289,12 @@
 
         const playUrl = getStreamUrl(url);
 
+        // Initialize Plyr immediately so the gorgeous UI displays instead of native controls
+        plyrPlayer = new Plyr(player, {
+            autoplay: true,
+            muted: false
+        });
+
         if (Hls.isSupported()) {
             hls = new Hls({
                 maxMaxBufferLength: 10,
@@ -300,24 +306,29 @@
 
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
                 const levels = hls.levels.map(e => e.height);
-                const plyrOptions = {
-                    quality: {
-                        default: levels[0],
-                        options: levels,
-                        forced: true,
-                        onChange: (e) => {
-                            window.hls.levels.forEach((n, o) => {
-                                if (n.height === e) {
-                                    window.hls.currentLevel = o;
-                                }
-                            });
-                        }
-                    },
-                    autoplay: true,
-                    muted: false
-                };
-                plyrPlayer = new Plyr(player, plyrOptions);
-                player.play().catch(() => {});
+                if (levels.length > 0) {
+                    // Re-create Plyr to bind the quality options dynamically
+                    plyrPlayer.destroy();
+                    plyrPlayer = new Plyr(player, {
+                        quality: {
+                            default: levels[0],
+                            options: levels,
+                            forced: true,
+                            onChange: (e) => {
+                                window.hls.levels.forEach((n, o) => {
+                                    if (n.height === e) {
+                                        window.hls.currentLevel = o;
+                                    }
+                                });
+                            }
+                        },
+                        autoplay: true,
+                        muted: false
+                    });
+                    player.play().catch(() => {});
+                } else {
+                    player.play().catch(() => {});
+                }
             });
 
             hls.on(Hls.Events.ERROR, function (event, data) {
@@ -337,10 +348,6 @@
             });
         } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
             player.src = playUrl;
-            plyrPlayer = new Plyr(player, {
-                autoplay: true,
-                muted: false
-            });
             player.play().catch(() => {});
         }
     }
