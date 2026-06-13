@@ -227,6 +227,23 @@ class SyncFancodeEvents extends Command
             $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
+            // Retry once on connection failure (status 0)
+            if ($statusCode === 0) {
+                sleep(2);
+                $ch2 = curl_init($url);
+                curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch2, CURLOPT_TIMEOUT, 8);
+                curl_setopt($ch2, CURLOPT_CONNECTTIMEOUT, 5);
+                curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch2, CURLOPT_MAXREDIRS, 2);
+                curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch2, CURLOPT_HTTPHEADER, $headers);
+                if ($referer) curl_setopt($ch2, CURLOPT_REFERER, $referer);
+                curl_exec($ch2);
+                $statusCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+                curl_close($ch2);
+            }
+
             // 200-399 success/redirect status codes or 403 (for token/auth restricted pages)
             return ($statusCode >= 200 && $statusCode < 400) || $statusCode === 403;
         } catch (\Exception $e) {

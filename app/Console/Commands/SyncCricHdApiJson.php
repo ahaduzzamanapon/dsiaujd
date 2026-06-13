@@ -63,6 +63,7 @@ class SyncCricHdApiJson extends Command
         foreach ($channelsData as $channel) {
             $name = trim($channel['name'] ?? '');
             $srvUrl = trim($channel['link'] ?? '');
+            $channelId = trim($channel['id'] ?? '');
             
             if (empty($name) || empty($srvUrl)) {
                 continue;
@@ -75,15 +76,42 @@ class SyncCricHdApiJson extends Command
 
             $this->info("Processing [{$total}]: {$name}");
 
-            // 1. Check if URL already exists
+            // 1. Check if this exact URL already exists (no change needed)
             $urlExists = StreamServer::where('url', $srvUrl)->exists();
             if ($urlExists) {
                 $skipped_duplicate++;
-                $this->line("  -> Already exists. Skipped.");
+                $this->line("  -> Already up-to-date. Skipped.");
                 continue;
             }
 
-            // 2. Validate link is online
+            // 2. Check if we have an older URL for the same channel (expired signed URL)
+            //    Match by channel id pattern in the URL path (e.g. /hls/ptvpk.m3u8)
+            $oldServer = null;
+            if (!empty($channelId)) {
+                $oldServer = StreamServer::where('url', 'like', "%/hls/{$channelId}.m3u8%")
+                    ->first();
+            }
+
+            if ($oldServer) {
+                // 2a. Validate the new URL before replacing the old one
+                if (!$this->checkLink($srvUrl, $referer, $origin)) {
+                    $skipped_offline++;
+                    $this->warn("  -> New URL is also down. Keeping old entry.");
+                    continue;
+                }
+
+                // 2b. Update the URL in place (preserving the stream/server relationship)
+                $oldServer->update([
+                    'url' => $srvUrl,
+                    'http_referer' => $referer,
+                    'http_origin' => $origin,
+                ]);
+                $imported++;
+                $this->info("  -> URL refreshed (old token replaced)!");
+                continue;
+            }
+
+            // 3. Validate link is online before creating new entry
             if (!$this->checkLink($srvUrl, $referer, $origin)) {
                 $skipped_offline++;
                 $this->warn("  -> Link is down. Skipped.");
@@ -165,7 +193,27 @@ class SyncCricHdApiJson extends Command
             $err = curl_error($ch);
             curl_close($ch);
 
-            $this->info("    Status Code: {$statusCode}");
+            // If status is 0 (connection failure), retry once after a short delay
+            if ($statusCode === 0) {
+                sleep(2);
+                $ch2 = curl_init($url);
+                curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch2, CURLOPT_TIMEOUT, 8);
+                curl_setopt($ch2, CURLOPT_CONNECTTIMEOUT, 5);
+                curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch2, CURLOPT_MAXREDIRS, 3);
+                curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch2, CURLOPT_HTTPHEADER, $headers);
+                if ($referer) curl_setopt($ch2, CURLOPT_REFERER, $referer);
+                curl_exec($ch2);
+                $statusCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+                $err = curl_error($ch2);
+                curl_close($ch2);
+                $this->warn("    [Retry] Status Code: {$statusCode}");
+            } else {
+                $this->info("    Status Code: {$statusCode}");
+            }
+
             if ($err) {
                 $this->error("    Curl Error: {$err}");
             }
