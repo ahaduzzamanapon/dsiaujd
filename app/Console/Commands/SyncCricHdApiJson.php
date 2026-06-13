@@ -94,6 +94,22 @@ class SyncCricHdApiJson extends Command
             }
 
             if ($oldServer) {
+                // Check if the old server is attached to a stream with a completely different name (e.g. due to incorrect merging)
+                $parentStream = $oldServer->stream;
+                if ($parentStream && (
+                    \App\Services\StreamDeduplicator::isKnownConflict($parentStream->name, $name) ||
+                    (!str_contains(strtolower($parentStream->name), strtolower($name)) && 
+                     !str_contains(strtolower($name), strtolower($parentStream->name)) &&
+                     \App\Services\StreamDeduplicator::normalizeName($parentStream->name) !== \App\Services\StreamDeduplicator::normalizeName($name))
+                )) {
+                    // This server was incorrectly attached/merged to a different channel!
+                    // Delete it from the wrong channel so we can re-create it under the correct channel
+                    $oldServer->delete();
+                    $oldServer = null;
+                }
+            }
+
+            if ($oldServer) {
                 // 2a. Validate the new URL before replacing the old one
                 if (!$this->checkLink($srvUrl, $referer, $origin)) {
                     if ($this->option('review')) {

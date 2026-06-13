@@ -51,6 +51,9 @@ class CleanAndMergeStreams extends Command
                 foreach ($canonicalStreams as $entry) {
                     similar_text($entry['normalizedName'], $normalizedNew, $percent);
                     if ($percent >= 85) {
+                        if (StreamDeduplicator::isKnownConflict($entry['stream']->name, $stream->name)) {
+                            continue;
+                        }
                         if (!StreamDeduplicator::hasConflictingNumbers($entry['normalizedName'], $normalizedNew)) {
                             $matchedCanonical = $entry['stream'];
                             break;
@@ -67,6 +70,9 @@ class CleanAndMergeStreams extends Command
                 foreach ($canonicalStreams as $entry) {
                     similar_text($entry['normalizedName'], $normalizedNew, $percent);
                     if ($percent >= 70 && $percent < 85) {
+                        if (StreamDeduplicator::isKnownConflict($entry['stream']->name, $stream->name)) {
+                            continue;
+                        }
                         if (!StreamDeduplicator::hasConflictingNumbers($entry['normalizedName'], $normalizedNew)) {
                             $candidates[] = $entry['stream']->name;
                         }
