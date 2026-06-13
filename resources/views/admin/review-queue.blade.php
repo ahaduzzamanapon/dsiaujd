@@ -243,12 +243,37 @@
             hls.destroy();
         }
 
+        function getStreamUrl(streamUrl) {
+            if (!streamUrl) return '';
+            const isHttps = window.location.protocol === 'https:';
+            const isHttp = streamUrl.startsWith('http://');
+            const isIp = /^(https?:\/\/)?(\d{1,3}\.){3}\d{1,3}/.test(streamUrl);
+            
+            const needsProxy = [
+                '198.195.',
+                'bdixtv',
+                'bdix',
+                'zohanayaan.com',
+                'executeandship.com',
+                'crichd',
+                'fancode.com',
+                'redforce.live'
+            ].some(domain => streamUrl.toLowerCase().includes(domain));
+
+            if ((isHttps && isHttp) || isIp || needsProxy) {
+                return `/api/stream-proxy?url=${encodeURIComponent(streamUrl)}`;
+            }
+            return streamUrl;
+        }
+
+        const playUrl = getStreamUrl(url);
+
         if (Hls.isSupported()) {
             hls = new Hls({
                 maxMaxBufferLength: 10,
                 enableWorker: true
             });
-            hls.loadSource(url);
+            hls.loadSource(playUrl);
             hls.attachMedia(player);
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
                 player.play().catch(() => {});
@@ -269,7 +294,7 @@
                 }
             });
         } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
-            player.src = url;
+            player.src = playUrl;
             player.addEventListener('canplay', function() {
                 player.play().catch(() => {});
             });
