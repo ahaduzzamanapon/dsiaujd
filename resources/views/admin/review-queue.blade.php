@@ -269,11 +269,11 @@
             const isHttps = window.location.protocol === 'https:';
             const isHttp = streamUrl.startsWith('http://');
             const isIp = /^(https?:\/\/)?(\d{1,3}\.){3}\d{1,3}/.test(streamUrl);
+            const isBdix = streamUrl.toLowerCase().includes('bdix') || streamUrl.toLowerCase().includes('bdixtv');
             
-            const needsProxy = [
+            // Domains that require custom referrer/origin headers (server can reach them)
+            const needsHeaderProxy = [
                 '198.195.',
-                'bdixtv',
-                'bdix',
                 'zohanayaan.com',
                 'executeandship.com',
                 'crichd',
@@ -281,7 +281,11 @@
                 'redforce.live'
             ].some(domain => streamUrl.toLowerCase().includes(domain));
 
-            if ((isHttps && isHttp) || isIp || needsProxy) {
+            // For BDIX / IP streams: Only proxy if we are on HTTPS to bypass mixed-content.
+            // If we are on HTTP, play them directly because our US server cannot connect to BDIX.
+            const needsMixedContentProxy = (isIp || isBdix) && isHttps && isHttp;
+
+            if (needsHeaderProxy || needsMixedContentProxy || (isHttps && isHttp && !isIp && !isBdix)) {
                 return `/api/stream-proxy?url=${encodeURIComponent(streamUrl)}`;
             }
             return streamUrl;
