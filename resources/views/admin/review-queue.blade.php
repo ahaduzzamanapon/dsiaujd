@@ -4,6 +4,19 @@
 @section('page-subtitle', 'Manually test and review stream links before publishing or discarding them')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+<style>
+    :root {
+        --plyr-color-main: #06b6d4;
+        --plyr-video-background: #000;
+    }
+    .plyr {
+        width: 100%;
+        height: 100%;
+        border-radius: 0px;
+    }
+</style>
+
 @if($pending->isEmpty())
     <div class="glass-panel p-12 rounded-3xl shadow-xl text-center max-w-2xl mx-auto my-12">
         <div class="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -166,8 +179,10 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
 <script>
     let hls = null;
+    let plyrPlayer = null;
     let selectedId = null;
     const player = document.getElementById('hls-player');
     const overlay = document.getElementById('player-overlay');
@@ -239,9 +254,14 @@
             player.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        // Load HLS Stream
+        // Destroy previous player instances
+        if (plyrPlayer) {
+            plyrPlayer.destroy();
+            plyrPlayer = null;
+        }
         if (hls) {
             hls.destroy();
+            hls = null;
         }
 
         function getStreamUrl(streamUrl) {
@@ -276,9 +296,30 @@
             });
             hls.loadSource(playUrl);
             hls.attachMedia(player);
+            window.hls = hls;
+
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                const levels = hls.levels.map(e => e.height);
+                const plyrOptions = {
+                    quality: {
+                        default: levels[0],
+                        options: levels,
+                        forced: true,
+                        onChange: (e) => {
+                            window.hls.levels.forEach((n, o) => {
+                                if (n.height === e) {
+                                    window.hls.currentLevel = o;
+                                }
+                            });
+                        }
+                    },
+                    autoplay: true,
+                    muted: false
+                };
+                plyrPlayer = new Plyr(player, plyrOptions);
                 player.play().catch(() => {});
             });
+
             hls.on(Hls.Events.ERROR, function (event, data) {
                 if (data.fatal) {
                     console.warn('Fatal player error:', data);
@@ -296,9 +337,11 @@
             });
         } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
             player.src = playUrl;
-            player.addEventListener('canplay', function() {
-                player.play().catch(() => {});
+            plyrPlayer = new Plyr(player, {
+                autoplay: true,
+                muted: false
             });
+            player.play().catch(() => {});
         }
     }
 
@@ -385,6 +428,10 @@
     }
 
     function resetPlayer() {
+        if (plyrPlayer) {
+            plyrPlayer.destroy();
+            plyrPlayer = null;
+        }
         if (hls) {
             hls.destroy();
             hls = null;
