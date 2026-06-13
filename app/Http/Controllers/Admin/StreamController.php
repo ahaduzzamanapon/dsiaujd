@@ -38,7 +38,10 @@ class StreamController extends Controller
                 $q->where('name', 'like', '%' . $search . '%')
                   ->orWhere('team1_name', 'like', '%' . $search . '%')
                   ->orWhere('team2_name', 'like', '%' . $search . '%')
-                  ->orWhere('sport_type', 'like', '%' . $search . '%');
+                  ->orWhere('sport_type', 'like', '%' . $search . '%')
+                  ->orWhereHas('servers', function ($sq) use ($search) {
+                      $sq->where('url', 'like', '%' . $search . '%');
+                  });
             });
         }
 
