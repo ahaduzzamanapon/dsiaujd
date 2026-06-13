@@ -152,6 +152,20 @@ class DashboardController extends Controller
                 'description' => 'Runs everything in sequence: AI Duplicate Cleaner → AI Category Cleanup → Stream Link Checker. Best run nightly.',
                 'type' => 'full-maintenance',
                 'url' => null
+            ],
+            [
+                'id' => 15,
+                'name' => 'Static Channels JSON',
+                'description' => 'Fetch and sync live channels from static_channels.json repository. Auto maps online streams to the "Fresh" category tab.',
+                'type' => 'static-channels',
+                'url' => null
+            ],
+            [
+                'id' => 16,
+                'name' => 'CricHD API JSON',
+                'description' => 'Fetch and sync live sports channels from CricHD Auto-Update API source. Auto maps active streams to standard and "Fresh" categories.',
+                'type' => 'crichd-api',
+                'url' => null
             ]
         ];
 
@@ -212,6 +226,12 @@ class DashboardController extends Controller
             $url = null;
         } elseif ($type === 'category-cleanup') {
             $name = 'AI Category Cleanup';
+            $url = null;
+        } elseif ($type === 'static-channels') {
+            $name = 'Static Channels JSON';
+            $url = null;
+        } elseif ($type === 'crichd-api') {
+            $name = 'CricHD API JSON';
             $url = null;
         } elseif ($type === 'full-maintenance') {
             $name = '⚡ Full Maintenance (All-in-One)';

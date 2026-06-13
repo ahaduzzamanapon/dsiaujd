@@ -15,7 +15,7 @@ class CleanupCategories extends Command
     // The only valid/standard categories we want to keep
     const STANDARD = [
         'Sports', 'Bangla', 'Hindi', 'English', 'Kids',
-        'Islamic', 'News', 'Music', 'Entertainment', 'Live Channel'
+        'Islamic', 'News', 'Music', 'Entertainment', 'Live Channel', 'Fresh'
     ];
 
     public function handle()

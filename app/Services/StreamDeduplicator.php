@@ -90,7 +90,7 @@ class StreamDeduplicator
         // 3. Fallback
         if (!empty($suggestedCategory)) {
             $capitalized = ucfirst(trim($suggestedCategory));
-            $standard = ['Sports', 'Bangla', 'Hindi', 'English', 'Kids', 'Islamic', 'News', 'Music', 'Entertainment', 'Live Channel'];
+            $standard = ['Sports', 'Bangla', 'Hindi', 'English', 'Kids', 'Islamic', 'News', 'Music', 'Entertainment', 'Live Channel', 'Fresh'];
             if (in_array($capitalized, $standard)) {
                 return $capitalized;
             }

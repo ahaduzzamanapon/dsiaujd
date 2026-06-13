@@ -69,6 +69,10 @@ class RunSyncTask extends Command
             $cmd[] = '--ai';
         } elseif ($task->type === 'category-cleanup') {
             $cmd[] = 'categories:cleanup';
+        } elseif ($task->type === 'static-channels') {
+            $cmd[] = 'sync:static-channels';
+        } elseif ($task->type === 'crichd-api') {
+            $cmd[] = 'sync:crichd-api';
         } elseif ($task->type === 'full-maintenance') {
             $cmd[] = 'maintenance:full';
         } else {

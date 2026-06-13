@@ -19,6 +19,10 @@ use Carbon\Carbon;
 | Public Web Routes
 |--------------------------------------------------------------------------
 */
+Route::get('/download_apk', function () {
+    return view('download_apk');
+})->name('download.apk');
+
 Route::get('/', function () {
     return redirect()->away('https://livetvbd-delta.vercel.app/');
 
