@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Tester — PTV Sports & CricHD</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0d0d1a;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+        h1 { color: #7c3aed; margin-bottom: 5px; font-size: 1.4rem; }
+        p.sub { color: #666; font-size: 0.8rem; margin-bottom: 20px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .card {
+            background: #1a1a2e;
+            border: 1px solid #2d2d4e;
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: #7c3aed; }
+        .card.active { border-color: #22c55e; background: #0f2010; }
+        .card.error  { border-color: #ef4444; background: #1a0808; }
+        .card h3 { font-size: 0.9rem; margin-bottom: 4px; }
+        .card .url { font-size: 0.65rem; color: #666; word-break: break-all; }
+        .card .status {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: #2d2d4e;
+        }
+        .card.active .status { background: #166534; color: #4ade80; }
+        .card.error  .status { background: #7f1d1d; color: #f87171; }
+
+        .player-wrap {
+            margin-top: 20px;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .player-wrap h2 {
+            position: absolute;
+            top: 10px; left: 12px;
+            font-size: 0.85rem;
+            color: #fff;
+            z-index: 10;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        video {
+            width: 100%;
+            max-height: 420px;
+            display: block;
+            background: #000;
+        }
+        .log {
+            margin-top: 12px;
+            background: #111;
+            border: 1px solid #2d2d4e;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.72rem;
+            font-family: monospace;
+            color: #aaa;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .log .ok   { color: #4ade80; }
+        .log .err  { color: #f87171; }
+        .log .info { color: #60a5fa; }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>🎬 CricHD / Zohanayaan Stream Tester</h1>
+<p class="sub">Click any channel card to play. Referer & Origin set automatically.</p>
+
+<div class="grid" id="channelGrid"></div>
+
+<div class="player-wrap" style="display:none" id="playerWrap">
+    <h2 id="nowPlaying">Now Playing</h2>
+    <video id="video" controls autoplay></video>
+</div>
+
+<div class="log" id="log"><span class="info">Ready. Click a channel to test.</span><br></div>
+
+<script>
+const REFERER = 'https://executeandship.com/';
+const ORIGIN  = 'https://executeandship.com';
+
+const channels = [
+    { name: 'PTV Sports',            id: 'ptvpk',       url: 'https://cdn5.zohanayaan.com:1686/hls/ptvpk.m3u8?md5=BEbYtBp_3TEZkQmIfbweCw&expires=1781331621' },
+    { name: 'Star Sports 1',         id: 'star1in',     url: 'https://cdn4.zohanayaan.com:1686/hls/star1in.m3u8?md5=BMOK-H5m9_GU6rMyOtRuQg&expires=1781331621' },
+    { name: 'Star Sports 1 Hindi',   id: 'starhindi',   url: 'https://cdn5.zohanayaan.com:1686/hls/starhindi.m3u8?md5=XZJZjMgKVlgrx7LVi8mQ_w&expires=1781331621' },
+    { name: 'Willow HD',             id: 'willowusa',   url: 'https://cdn3.zohanayaan.com:1686/hls/willowusa.m3u8?md5=E8j9P4VxAvJYIY3Oy5m5DQ&expires=1781331622' },
+    { name: 'Willow HD 2',           id: 'willowextra', url: 'https://cdn4.zohanayaan.com:1686/hls/willowextra.m3u8?md5=ECS3scP3axyD0KCQT2sotg&expires=1781331622' },
+    { name: 'Ten Sports',            id: 'tenspk',      url: 'https://cdn9.zohanayaan.com:1686/hls/tenspk.m3u8?md5=iOYUWNXdz_Hsd904gjz75g&expires=1781331622' },
+    { name: 'A Sports HD',           id: 'asportshd',   url: 'https://cdn1.zohanayaan.com:1686/hls/asportshd.m3u8?md5=KimtexMnDN6RRDcYTlf6zQ&expires=1781331622' },
+    { name: 'Sky Sports Cricket',    id: 'skyscric',    url: 'https://cdn3.zohanayaan.com:1686/hls/skyscric.m3u8?md5=TXLT8Uw0rdsk7sSJzRc5_g&expires=1781331622' },
+    { name: 'Sky Sports Main Event', id: 'skysme',      url: 'https://cdn8.zohanayaan.com:1686/hls/skysme.m3u8?md5=W3fKTVsVOrcPnsDA1IPq7Q&expires=1781331622' },
+    { name: 'Sky Sports F1',         id: 'skysfor1',    url: 'https://cdn5.zohanayaan.com:1686/hls/skysfor1.m3u8?md5=ftL2iq3rR0Sq4ZFV0VOPng&expires=1781331625' },
+    { name: 'Sky Sports Football',   id: 'skysfott',    url: 'https://cdn7.zohanayaan.com:1686/hls/skysfott.m3u8?md5=nevXaj8eZVwGaPA9Ezn6IQ&expires=1781331625' },
+    { name: 'Sky Sports Golf',       id: 'skysgol',     url: 'https://cdn7.zohanayaan.com:1686/hls/skysgol.m3u8?md5=UUPFdNMjPZ6U99gPrDPeUg&expires=1781331625' },
+    { name: 'Sky Sports Mix',        id: 'skysmixx',    url: 'https://cdn1.zohanayaan.com:1686/hls/skysmixx.m3u8?md5=Dw1z2Hg2SXW3IPh8h5s3-g&expires=1781331627' },
+    { name: 'Sky Sports Tennis',     id: 'skystennis',  url: 'https://cdn10.zohanayaan.com:1686/hls/skystennis.m3u8?md5=uiVsTMV-u27kGnrtHQ9NtA&expires=1781331627' },
+    { name: 'ESPN 1',                id: 'espnusa',     url: 'https://cdn6.zohanayaan.com:1686/hls/espnusa.m3u8?md5=UlatwMNTK57PKI1WGIVGzQ&expires=1781331626' },
+    { name: 'ESPN 2',                id: 'espn2',       url: 'https://cdn4.zohanayaan.com:1686/hls/espn2.m3u8?md5=JCL-gkQSm97oidCU07_S4w&expires=1781331626' },
+    { name: 'LaLiGA',                id: 'laligauk',    url: 'https://cdn6.zohanayaan.com:1686/hls/laligauk.m3u8?md5=2GbCj_-bRkwW6Z-yl1GFDQ&expires=1781331626' },
+    { name: 'Premier Sports 1',      id: 'premieruk',   url: 'https://cdn8.zohanayaan.com:1686/hls/premieruk.m3u8?md5=p9Qbrgb47C1FYrvektOgbw&expires=1781331626' },
+];
+
+const grid = document.getElementById('channelGrid');
+const logEl = document.getElementById('log');
+const video = document.getElementById('video');
+const playerWrap = document.getElementById('playerWrap');
+const nowPlaying = document.getElementById('nowPlaying');
+
+let hls = null;
+let cards = {};
+
+function log(msg, type = 'info') {
+    const span = document.createElement('span');
+    span.className = type;
+    span.textContent = msg;
+    logEl.appendChild(span);
+    logEl.appendChild(document.createElement('br'));
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+channels.forEach((ch, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+        <h3>${ch.name}</h3>
+        <div class="url">${ch.url}</div>
+        <span class="status">Click to test</span>
+    `;
+    card.addEventListener('click', () => playChannel(ch, card));
+    grid.appendChild(card);
+    cards[ch.id] = card;
+
+    // Auto-probe PTVsports first
+    if (ch.id === 'ptvpk') {
+        setTimeout(() => playChannel(ch, card), 300);
+    }
+});
+
+function playChannel(ch, card) {
+    // Reset all cards
+    Object.values(cards).forEach(c => c.classList.remove('active', 'error'));
+
+    if (hls) { hls.destroy(); hls = null; }
+
+    playerWrap.style.display = 'block';
+    nowPlaying.textContent = '▶ ' + ch.name;
+    card.querySelector('.status').textContent = 'Loading...';
+    log(`[Testing] ${ch.name}`, 'info');
+    log(`URL: ${ch.url}`, 'info');
+
+    if (Hls.isSupported()) {
+        hls = new Hls({
+            xhrSetup: function(xhr, url) {
+                // Note: browsers block setting Referer/Origin via JS (security)
+                // These headers will be sent as-is by the browser for same-origin requests
+                // For cross-origin HLS, CORS must be allowed on the CDN
+            },
+            debug: false,
+        });
+
+        hls.loadSource(ch.url);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            log(`✅ Manifest loaded for ${ch.name}`, 'ok');
+            card.classList.add('active');
+            card.querySelector('.status').textContent = '✅ Playing';
+            video.play().catch(() => {});
+        });
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+            if (data.fatal) {
+                log(`❌ Fatal error on ${ch.name}: ${data.type} — ${data.details}`, 'err');
+                card.classList.add('error');
+                card.querySelector('.status').textContent = '❌ Failed';
+            } else {
+                log(`⚠ Non-fatal: ${data.details}`, 'err');
+            }
+        });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari native HLS
+        video.src = ch.url;
+        video.addEventListener('loadedmetadata', () => {
+            log(`✅ Safari native HLS loaded for ${ch.name}`, 'ok');
+            card.classList.add('active');
+            card.querySelector('.status').textContent = '✅ Playing';
+        });
+    } else {
+        log('HLS not supported in this browser.', 'err');
+    }
+}
+</script>
+
+</body>
+</html>

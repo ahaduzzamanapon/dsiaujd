@@ -103,19 +103,30 @@ class CheckStreamLinks extends Command
                 $url = $info['url'];
                 
                 $isActive = false;
+                $isUnknown = false;
+
                 if ($ch === null) {
                     $isActive = false;
                 } else {
                     $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                     curl_multi_remove_handle($mh, $ch);
                     curl_close($ch);
-                    
-                    // 200 OK, 206 Partial Content, 302 Found/Redirect, or 403 Forbidden
-                    $isActive = ($statusCode >= 200 && $statusCode < 400) || $statusCode === 403;
+
+                    if ($statusCode === 0) {
+                        // Status 0 = connection failure (timeout, refused, network issue)
+                        // This does NOT mean stream is dead — could be transient or CDN geo-restriction
+                        // Never delete on status 0 to protect live streams from false deletion
+                        $isUnknown = true;
+                    } else {
+                        // 200-399 = active, 403 = geo-blocked but alive
+                        $isActive = ($statusCode >= 200 && $statusCode < 400) || $statusCode === 403;
+                    }
                 }
                 
-                if (!$isActive) {
-                    $this->error(" -> Dead link found: {$url}. Queueing for deletion...");
+                if ($isUnknown) {
+                    $this->warn(" -> Unreachable (status 0): {$url}. Keeping — may be transient.");
+                } elseif (!$isActive) {
+                    $this->error(" -> Dead link (HTTP {$statusCode}): {$url}. Queueing for deletion...");
                     $deadServerIds[] = $serverId;
                     $deletedServersCount++;
                 } else {
