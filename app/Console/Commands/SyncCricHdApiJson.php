@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Category;
 use App\Models\Stream;
 use App\Models\StreamServer;
+use App\Models\PendingStream;
 
 class SyncCricHdApiJson extends Command
 {
@@ -15,7 +16,7 @@ class SyncCricHdApiJson extends Command
      *
      * @var string
      */
-    protected $signature = 'sync:crichd-api {url? : The URL of the CricHD API JSON}';
+    protected $signature = 'sync:crichd-api {url? : The URL of the CricHD API JSON} {--review : Send failed links to review queue instead of skipping}';
 
     /**
      * The console command description.
@@ -95,8 +96,23 @@ class SyncCricHdApiJson extends Command
             if ($oldServer) {
                 // 2a. Validate the new URL before replacing the old one
                 if (!$this->checkLink($srvUrl, $referer, $origin)) {
-                    $skipped_offline++;
-                    $this->warn("  -> New URL is also down. Keeping old entry.");
+                    if ($this->option('review')) {
+                        PendingStream::create([
+                            'name'         => $name,
+                            'logo'         => $logo,
+                            'url'          => $srvUrl,
+                            'http_referer' => $referer,
+                            'http_origin'  => $origin,
+                            'category'     => 'Sports',
+                            'source'       => 'CricHD API',
+                            'reason'       => 'failed_check',
+                        ]);
+                        $skipped_offline++;
+                        $this->warn("  -> Link failed. Saved to Review Queue.");
+                    } else {
+                        $skipped_offline++;
+                        $this->warn("  -> New URL is also down. Keeping old entry.");
+                    }
                     continue;
                 }
 
@@ -113,8 +129,23 @@ class SyncCricHdApiJson extends Command
 
             // 3. Validate link is online before creating new entry
             if (!$this->checkLink($srvUrl, $referer, $origin)) {
-                $skipped_offline++;
-                $this->warn("  -> Link is down. Skipped.");
+                if ($this->option('review')) {
+                    PendingStream::create([
+                        'name'         => $name,
+                        'logo'         => $logo,
+                        'url'          => $srvUrl,
+                        'http_referer' => $referer,
+                        'http_origin'  => $origin,
+                        'category'     => 'Sports',
+                        'source'       => 'CricHD API',
+                        'reason'       => 'failed_check',
+                    ]);
+                    $skipped_offline++;
+                    $this->warn("  -> Link failed. Saved to Review Queue.");
+                } else {
+                    $skipped_offline++;
+                    $this->warn("  -> Link is down. Skipped.");
+                }
                 continue;
             }
 

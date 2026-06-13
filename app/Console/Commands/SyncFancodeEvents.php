@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use App\Models\Stream;
 use App\Models\StreamServer;
+use App\Models\PendingStream;
 
 class SyncFancodeEvents extends Command
 {
@@ -15,7 +16,7 @@ class SyncFancodeEvents extends Command
      *
      * @var string
      */
-    protected $signature = 'fancode:sync';
+    protected $signature = 'fancode:sync {--review : Send failed links to review queue instead of skipping}';
 
     /**
      * The console command description.
@@ -118,6 +119,20 @@ class SyncFancodeEvents extends Command
             foreach ($servers as $srv) {
                 if ($this->checkLink($srv['url'], $referer, $origin)) {
                     $verifiedServers[] = $srv;
+                } else {
+                    if ($this->option('review')) {
+                        PendingStream::create([
+                            'name'         => $title . ' (' . $srv['name'] . ')',
+                            'logo'         => $match['image'] ?? $match['src'] ?? null,
+                            'url'          => $srv['url'],
+                            'http_referer' => $referer,
+                            'http_origin'  => $origin,
+                            'category'     => 'Sports',
+                            'source'       => 'Fancode Events',
+                            'reason'       => 'failed_check',
+                        ]);
+                        $this->warn("  -> Link [{$srv['name']}] failed. Saved to Review Queue.");
+                    }
                 }
             }
 

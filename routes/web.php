@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\StreamController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\PromoBannerController;
+use App\Http\Controllers\Admin\PendingStreamController;
 
 use App\Models\Stream;
 use App\Models\PromoBanner;
@@ -138,4 +139,10 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
     Route::get('sync/tasks', [DashboardController::class, 'getSyncTasks'])->name('sync.tasks');
     Route::get('sync/tasks/{id}/log', [DashboardController::class, 'getSyncTaskLog'])->name('sync.log');
     Route::post('sync/clear-history', [DashboardController::class, 'clearSyncHistory'])->name('sync.clear-history');
+
+    // Stream Review Queue Routes
+    Route::get('review-queue', [PendingStreamController::class, 'index'])->name('review-queue.index');
+    Route::post('review-queue/{id}/approve', [PendingStreamController::class, 'approve'])->name('review-queue.approve');
+    Route::post('review-queue/{id}/reject', [PendingStreamController::class, 'reject'])->name('review-queue.reject');
+    Route::post('review-queue/reject-all', [PendingStreamController::class, 'rejectAll'])->name('review-queue.reject-all');
 });

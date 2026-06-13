@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Category;
 use App\Models\Stream;
 use App\Models\StreamServer;
+use App\Models\PendingStream;
 
 class SyncStaticChannelsJson extends Command
 {
@@ -15,7 +16,7 @@ class SyncStaticChannelsJson extends Command
      *
      * @var string
      */
-    protected $signature = 'sync:static-channels {url? : The URL of the static channels JSON}';
+    protected $signature = 'sync:static-channels {url? : The URL of the static channels JSON} {--review : Send failed links to review queue instead of skipping}';
 
     /**
      * The console command description.
@@ -68,45 +69,60 @@ class SyncStaticChannelsJson extends Command
                 continue;
             }
 
-            // Find all online/active links for this channel
-            $onlineLinks = array_filter($channelInfo['links'], function ($link) {
-                return isset($link['status']) && $link['status'] === 'online' && !empty($link['url']);
-            });
-
-            if (empty($onlineLinks)) {
-                $skipped_offline++;
-                continue;
-            }
-
             $total++;
             $logo = $channelInfo['tvg_logo'] ?? null;
             $group = $channelInfo['group'] ?? 'Live Channel';
 
             $this->info("Processing [{$total}]: {$channelName}");
 
-            foreach ($onlineLinks as $index => $link) {
+            foreach ($channelInfo['links'] as $index => $link) {
+                if (empty($link['url'])) {
+                    continue;
+                }
+                
                 $srvUrl = trim($link['url']);
-                $srvName = count($onlineLinks) > 1 ? 'Server ' . ($index + 1) : 'Server';
+                $isOnline = isset($link['status']) && $link['status'] === 'online';
+                $srvName = count($channelInfo['links']) > 1 ? 'Server ' . ($index + 1) : 'Server';
 
-                try {
-                    // Sync the channel and append the server using StreamDeduplicator
-                    $stream = \App\Services\StreamDeduplicator::syncChannelWithDeduplication(
-                        $channelName,
-                        $logo,
-                        $srvName,
-                        $srvUrl,
-                        null,
-                        null,
-                        $group
-                    );
+                if ($isOnline) {
+                    try {
+                        // Sync the channel and append the server using StreamDeduplicator
+                        $stream = \App\Services\StreamDeduplicator::syncChannelWithDeduplication(
+                            $channelName,
+                            $logo,
+                            $srvName,
+                            $srvUrl,
+                            null,
+                            null,
+                            $group
+                        );
 
-                    // Associate the stream with the Fresh category tab
-                    $stream->categories()->syncWithoutDetaching([$freshCategory->id]);
+                        // Associate the stream with the Fresh category tab
+                        $stream->categories()->syncWithoutDetaching([$freshCategory->id]);
 
-                    $imported++;
-                    $this->info("  -> Synced '{$srvName}' successfully!");
-                } catch (\Exception $e) {
-                    $this->error("  -> Failed to sync server: " . $e->getMessage());
+                        $imported++;
+                        $this->info("  -> Synced '{$srvName}' successfully!");
+                    } catch (\Exception $e) {
+                        $this->error("  -> Failed to sync server: " . $e->getMessage());
+                    }
+                } else {
+                    if ($this->option('review')) {
+                        PendingStream::create([
+                            'name'         => $channelName . ' (' . $srvName . ')',
+                            'logo'         => $logo,
+                            'url'          => $srvUrl,
+                            'http_referer' => null,
+                            'http_origin'  => null,
+                            'category'     => $group,
+                            'source'       => 'Static Channels',
+                            'reason'       => 'failed_check',
+                        ]);
+                        $skipped_offline++;
+                        $this->warn("  -> Link [{$srvName}] failed. Saved to Review Queue.");
+                    } else {
+                        $skipped_offline++;
+                        $this->warn("  -> Link [{$srvName}] is down. Skipped.");
+                    }
                 }
             }
         }

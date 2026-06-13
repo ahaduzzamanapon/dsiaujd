@@ -37,6 +37,14 @@
                                 <button type="button" onclick="fillM3uUrl('https://raw.githubusercontent.com/Mocha-TV/MochaTV-BDIX-IPTV/main/playlist.m3u')" class="px-2 py-1 rounded bg-gray-950 border border-gray-900 text-[10px] text-gray-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-colors">MochaTV BDIX</button>
                             </div>
                         </div>
+
+                        <div class="mt-4 flex items-center gap-3">
+                            <div class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="with_review" value="1" id="review-toggle-custom" class="sr-only peer" checked>
+                                <div class="w-7 h-4 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                            </div>
+                            <label for="review-toggle-custom" class="text-xs text-gray-400 cursor-pointer select-none">Send failed streams to Review Queue (Link Check Mode)</label>
+                        </div>
                     </div>
                     <button type="submit" class="w-full md:w-auto py-3 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-sm shadow-lg shadow-cyan-500/15 transition-all whitespace-nowrap flex items-center justify-center gap-2 mb-[52px] md:mb-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,6 +103,15 @@
                                     <input type="hidden" name="type" value="{{ $option['type'] }}">
                                     @if($option['url'])
                                         <input type="hidden" name="url" value="{{ $option['url'] }}">
+                                    @endif
+                                    @if(!$isAiCleaner && $option['type'] !== 'clean-duplicates' && $option['type'] !== 'category-cleanup' && $option['type'] !== 'link-checker' && $option['type'] !== 'full-maintenance')
+                                        <div class="flex items-center justify-between mb-4 p-2 bg-gray-950/40 rounded-xl border border-gray-900/60">
+                                            <label for="review-toggle-{{ $loop->index }}" class="text-[10px] text-gray-400 cursor-pointer select-none">Send failed streams to Review Queue</label>
+                                            <div class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" name="with_review" value="1" id="review-toggle-{{ $loop->index }}" class="sr-only peer" checked>
+                                                <div class="w-7 h-4 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                                            </div>
+                                        </div>
                                     @endif
                                     @if($isAiCleaner)
                                         <button type="submit" class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 border border-purple-500/30 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/10">

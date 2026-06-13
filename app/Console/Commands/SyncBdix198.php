@@ -13,7 +13,7 @@ class SyncBdix198 extends Command
      *
      * @var string
      */
-    protected $signature = 'bdix198:sync';
+    protected $signature = 'bdix198:sync {--review : Send failed links to review queue instead of skipping}';
 
     /**
      * The console command description.

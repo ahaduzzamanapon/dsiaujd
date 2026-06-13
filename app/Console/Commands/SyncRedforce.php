@@ -13,7 +13,7 @@ class SyncRedforce extends Command
      *
      * @var string
      */
-    protected $signature = 'redforce:sync {--html= : Path to a saved HTML file (use when server cannot reach BDIX network)}';
+    protected $signature = 'redforce:sync {--html= : Path to a saved HTML file (use when server cannot reach BDIX network)} {--review : Send failed links to review queue instead of skipping}';
 
     /**
      * The console command description.

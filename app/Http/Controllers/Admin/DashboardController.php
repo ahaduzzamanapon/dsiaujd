@@ -181,6 +181,7 @@ class DashboardController extends Controller
     {
         $type = $request->input('type');
         $url = $request->input('url');
+        $withReview = (bool) $request->input('with_review', false);
 
         if ($type === 'm3u') {
             if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
@@ -260,13 +261,15 @@ class DashboardController extends Controller
 
             $phpBinary = PHP_BINARY;
 
+            $reviewFlag = $withReview ? ' --review' : '';
+
             if (strncasecmp(PHP_OS, 'WIN', 3) === 0) {
                 // Windows background execution using popen + start /B
-                $cmd = "start /B cmd /c \"\"{$phpBinary}\" \"{$artisanPath}\" sync:run-task {$task->id} > \"{$logPath}\" 2>&1\"";
+                $cmd = "start /B cmd /c \"\"{$phpBinary}\" \"{$artisanPath}\" sync:run-task {$task->id}{$reviewFlag} > \"{$logPath}\" 2>&1\"";
                 pclose(popen($cmd, "r"));
             } else {
                 // Linux background execution
-                $cmd = "\"{$phpBinary}\" \"{$artisanPath}\" sync:run-task {$task->id} > \"{$logPath}\" 2>&1 &";
+                $cmd = "\"{$phpBinary}\" \"{$artisanPath}\" sync:run-task {$task->id}{$reviewFlag} > \"{$logPath}\" 2>&1 &";
                 exec($cmd);
             }
 

@@ -13,7 +13,7 @@ class RunSyncTask extends Command
      *
      * @var string
      */
-    protected $signature = 'sync:run-task {id}';
+    protected $signature = 'sync:run-task {id} {--review : Send failed links to review queue instead of skipping}';
 
     /**
      * The console command description.
@@ -47,19 +47,26 @@ class RunSyncTask extends Command
         $this->info("Started at: " . now()->toDateTimeString());
         $this->info("--------------------------------------------------");
 
+        $withReview = $this->option('review');
+
         // Construct the underlying Artisan command to run
         $cmd = [PHP_BINARY, base_path('artisan')];
         if ($task->type === 'm3u') {
             $cmd[] = 'm3u:sync';
             $cmd[] = $task->url;
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'fancode') {
             $cmd[] = 'fancode:sync';
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'bdixtv24') {
             $cmd[] = 'bdixtv24:sync';
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'redforce') {
             $cmd[] = 'redforce:sync';
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'bdix198') {
             $cmd[] = 'bdix198:sync';
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'link-checker') {
             $cmd[] = 'streams:check-links';
         } elseif ($task->type === 'clean-duplicates') {
@@ -71,8 +78,10 @@ class RunSyncTask extends Command
             $cmd[] = 'categories:cleanup';
         } elseif ($task->type === 'static-channels') {
             $cmd[] = 'sync:static-channels';
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'crichd-api') {
             $cmd[] = 'sync:crichd-api';
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'full-maintenance') {
             $cmd[] = 'maintenance:full';
         } else {

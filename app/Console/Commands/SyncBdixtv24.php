@@ -15,7 +15,7 @@ class SyncBdixtv24 extends Command
      *
      * @var string
      */
-    protected $signature = 'bdixtv24:sync';
+    protected $signature = 'bdixtv24:sync {--review : Send failed links to review queue instead of skipping}';
 
     /**
      * The console command description.

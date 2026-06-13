@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Category;
 use App\Models\Stream;
 use App\Models\StreamServer;
+use App\Models\PendingStream;
 
 class SyncM3uPlaylist extends Command
 {
@@ -15,7 +16,7 @@ class SyncM3uPlaylist extends Command
      *
      * @var string
      */
-    protected $signature = 'm3u:sync {url? : The URL of the M3U playlist}';
+    protected $signature = 'm3u:sync {url? : The URL of the M3U playlist} {--review : Send failed links to review queue instead of skipping}';
 
     /**
      * The console command description.
@@ -108,6 +109,9 @@ class SyncM3uPlaylist extends Command
                     } elseif ($result === 'offline') {
                         $skipped_offline++;
                         $this->warn("  -> Link is down. Skipped.");
+                    } elseif ($result === 'review') {
+                        $skipped_offline++;
+                        $this->warn("  -> Link failed. Saved to Review Queue.");
                     } elseif ($result === 'imported') {
                         $imported++;
                         $this->info("  -> Sync successful!");
@@ -146,6 +150,20 @@ class SyncM3uPlaylist extends Command
 
         // 2. Before importing, verify that the stream link works using custom headers if present.
         if (!$this->checkLink($url, $referer, $origin)) {
+            if ($this->option('review')) {
+                $groupTitle = trim($streamData['group_title'] ?? 'Other');
+                PendingStream::create([
+                    'name'         => $streamData['name'],
+                    'logo'         => $streamData['logo'] ?? null,
+                    'url'          => $url,
+                    'http_referer' => $referer,
+                    'http_origin'  => $origin,
+                    'category'     => ucfirst(strtolower($groupTitle)),
+                    'source'       => 'M3U Playlist',
+                    'reason'       => 'failed_check',
+                ]);
+                return 'review';
+            }
             return 'offline';
         }
 
