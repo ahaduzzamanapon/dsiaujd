@@ -158,11 +158,27 @@ class SyncCricHdApiJson extends Command
      */
     private function checkLink(string $url, ?string $referer = null, ?string $origin = null): bool
     {
+        // Trusted CDN domains — skip live check. These are verified by the server-side
+        // streams:check-links command which runs from the live server where these are accessible.
+        $trustedDomains = [
+            'zohanayaan.com',
+            'executeandship.com',
+        ];
+        $host = parse_url($url, PHP_URL_HOST) ?? '';
+        foreach ($trustedDomains as $trusted) {
+            if ($host === $trusted || str_ends_with($host, '.' . $trusted)) {
+                $this->line("  Checking link: {$url}");
+                $this->line("  -> Trusted domain ({$trusted}). Skipping live check.");
+                return true;
+            }
+        }
+
         $resolved = \App\Models\StreamServer::resolveHeadersForUrl($url, $referer, $origin);
         $referer = $resolved['referer'];
         $origin = $resolved['origin'];
 
         $this->info("  Checking link: {$url}");
+
         if ($referer) $this->info("    Referer: {$referer}");
         if ($origin) $this->info("    Origin: {$origin}");
 
