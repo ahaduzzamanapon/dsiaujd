@@ -24,6 +24,9 @@ Route::get('/download_apk', function () {
     return view('download_apk');
 })->name('download.apk');
 
+Route::get('/cron/sync-tv-channels', [ApiController::class, 'runTvSyncCron'])->name('cron.sync-tv-channels');
+
+
 Route::get('/', function () {
     return redirect()->away('https://livetvbd-delta.vercel.app/');
 

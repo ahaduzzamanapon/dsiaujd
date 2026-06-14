@@ -82,6 +82,9 @@ class RunSyncTask extends Command
         } elseif ($task->type === 'crichd-api') {
             $cmd[] = 'sync:crichd-api';
             if ($withReview) $cmd[] = '--review';
+        } elseif ($task->type === 'tv-channels') {
+            $cmd[] = 'sync:tv-channels';
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'full-maintenance') {
             $cmd[] = 'maintenance:full';
         } else {

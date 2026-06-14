@@ -358,5 +358,64 @@ class ApiController extends Controller
             return response('Error loading RedForce stream: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * Trigger background TV Channels sync process via public HTTP cron endpoint.
+     */
+    public function runTvSyncCron(\Illuminate\Http\Request $request)
+    {
+        $inputToken = $request->query('token');
+        $expectedToken = env('CRON_TOKEN', 'alltv_cron_secret_token_2026');
+
+        if (empty($inputToken) || $inputToken !== $expectedToken) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized: Invalid or missing token.'
+            ], 403);
+        }
+
+        try {
+            $task = \App\Models\SyncTask::create([
+                'type' => 'tv-channels',
+                'name' => '📺 Cron TV Channels Sync',
+                'url' => null,
+                'status' => 'pending',
+            ]);
+
+            $artisanPath = base_path('artisan');
+            $logPath = storage_path('logs/sync/task_' . $task->id . '.log');
+            
+            if (!file_exists(dirname($logPath))) {
+                mkdir(dirname($logPath), 0755, true);
+            }
+
+            $phpBinary = PHP_BINARY;
+            $reviewFlag = ' --review'; // Auto-enable review mode so failed links go to Review Queue instead of going offline
+
+            if (strncasecmp(PHP_OS, 'WIN', 3) === 0) {
+                // Windows background execution using popen + start /B
+                $cmd = "start /B cmd /c \"\"{$phpBinary}\" \"{$artisanPath}\" sync:run-task {$task->id}{$reviewFlag} > \"{$logPath}\" 2>&1\"";
+                pclose(popen($cmd, "r"));
+            } else {
+                // Linux background execution
+                $cmd = "\"{$phpBinary}\" \"{$artisanPath}\" sync:run-task {$task->id}{$reviewFlag} > \"{$logPath}\" 2>&1 &";
+                exec($cmd);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'TV channel sync task started successfully in the background.',
+                'task_id' => $task->id,
+                'log_file' => 'task_' . $task->id . '.log'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to initiate sync task: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
+
 

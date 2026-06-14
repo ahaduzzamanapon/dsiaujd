@@ -166,6 +166,13 @@ class DashboardController extends Controller
                 'description' => 'Fetch and sync live sports channels from CricHD Auto-Update API source. Auto maps active streams to standard and "Fresh" categories.',
                 'type' => 'crichd-api',
                 'url' => null
+            ],
+            [
+                'id' => 17,
+                'name' => '📺 All TV Channels Sync (All-in-One)',
+                'description' => 'Runs all TV channel sync scrapers and M3U playlists sequentially (CricHD API, BDIX, Redforce, Static, and configured M3U playlists). Best for a single cron trigger.',
+                'type' => 'tv-channels',
+                'url' => null
             ]
         ];
 
@@ -233,6 +240,9 @@ class DashboardController extends Controller
             $url = null;
         } elseif ($type === 'crichd-api') {
             $name = 'CricHD API JSON';
+            $url = null;
+        } elseif ($type === 'tv-channels') {
+            $name = '📺 All TV Channels Sync';
             $url = null;
         } elseif ($type === 'full-maintenance') {
             $name = '⚡ Full Maintenance (All-in-One)';
