@@ -433,11 +433,7 @@ class DashboardController extends Controller
         $skipped  = 0;
 
         foreach ($channels as $ch) {
-            if (isset($ch['status']) && $ch['status'] === 'hidden') {
-                $skipped++;
-                continue;
-            }
-
+    
             $name = trim($ch['name'] ?? '');
             $url  = $ch['url'] ?? '';
             // if (empty($name) || empty($url)) {
