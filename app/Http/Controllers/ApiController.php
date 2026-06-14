@@ -276,8 +276,14 @@ class ApiController extends Controller
                             $proxyUrl = '/api/stream-proxy?url=' . urlencode($absoluteUrl);
                             $rewrittenLines[] = $proxyUrl;
                         } else {
-                            // Video segment - return absolute URL directly so the browser streams it directly
-                            $rewrittenLines[] = $absoluteUrl;
+                            // If the video segment is insecure HTTP, we must proxy it to prevent Mixed Content blocking.
+                            // If it is HTTPS, we can let the browser stream it directly to save server bandwidth.
+                            if (str_starts_with(strtolower($absoluteUrl), 'http://')) {
+                                $proxyUrl = '/api/stream-proxy?url=' . urlencode($absoluteUrl);
+                                $rewrittenLines[] = $proxyUrl;
+                            } else {
+                                $rewrittenLines[] = $absoluteUrl;
+                            }
                         }
                     }
                 }
