@@ -173,6 +173,20 @@ class DashboardController extends Controller
                 'description' => 'Runs all TV channel sync scrapers and M3U playlists sequentially (CricHD API, BDIX, Redforce, Static, and configured M3U playlists). Best for a single cron trigger.',
                 'type' => 'tv-channels',
                 'url' => null
+            ],
+            [
+                'id' => 18,
+                'name' => '🕷️ TV Channels Scrapers Only Sync',
+                'description' => 'Runs only the scrapers (CricHD API, BDIX 198, BDIXTV24, RedForce, and Static channels). Best for frequent runs.',
+                'type' => 'tv-channels-scrapers',
+                'url' => null
+            ],
+            [
+                'id' => 19,
+                'name' => '📄 TV Channels M3U Only Sync',
+                'description' => 'Runs only the configured M3U playlist syncs (Roar Zone, CricHD, BD, and BDIX IPTV playlists). Best for less frequent runs.',
+                'type' => 'tv-channels-m3u',
+                'url' => null
             ]
         ];
 
@@ -243,6 +257,12 @@ class DashboardController extends Controller
             $url = null;
         } elseif ($type === 'tv-channels') {
             $name = '📺 All TV Channels Sync';
+            $url = null;
+        } elseif ($type === 'tv-channels-scrapers') {
+            $name = '🕷️ TV Channels Scrapers Only Sync';
+            $url = null;
+        } elseif ($type === 'tv-channels-m3u') {
+            $name = '📄 TV Channels M3U Only Sync';
             $url = null;
         } elseif ($type === 'full-maintenance') {
             $name = '⚡ Full Maintenance (All-in-One)';

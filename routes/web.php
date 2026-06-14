@@ -25,6 +25,8 @@ Route::get('/download_apk', function () {
 })->name('download.apk');
 
 Route::get('/cron/sync-tv-channels', [ApiController::class, 'runTvSyncCron'])->name('cron.sync-tv-channels');
+Route::get('/cron/sync-scrapers', [ApiController::class, 'runScrapersCron'])->name('cron.sync-scrapers');
+Route::get('/cron/sync-m3u', [ApiController::class, 'runM3uCron'])->name('cron.sync-m3u');
 
 
 Route::get('/', function () {

@@ -12,14 +12,14 @@ class SyncTvChannels extends Command
      *
      * @var string
      */
-    protected $signature = 'sync:tv-channels {--review : Send failed links to review queue instead of skipping}';
+    protected $signature = 'sync:tv-channels {--review : Send failed links to review queue instead of skipping} {--scrapers-only} {--m3u-only}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sync all TV channel sources sequentially (CricHD API, BDIX, Redforce, Static, and configured M3U playlists)';
+    protected $description = 'Sync TV channel sources sequentially (CricHD API, BDIX, Redforce, Static, and configured M3U playlists)';
 
     /**
      * Execute the console command.
@@ -27,13 +27,16 @@ class SyncTvChannels extends Command
     public function handle()
     {
         $this->info('==========================================');
-        $this->info('   TV Channels All-in-One Sync Started    ');
+        $this->info('   TV Channels Sync Started               ');
         $this->info('==========================================');
         $this->info('Started at: ' . now()->toDateTimeString());
         $this->info('');
 
         $withReview = $this->option('review');
         $args = $withReview ? ['--review' => true] : [];
+
+        $scrapersOnly = $this->option('scrapers-only');
+        $m3uOnly = $this->option('m3u-only');
 
         $scrapers = [
             [
@@ -64,55 +67,59 @@ class SyncTvChannels extends Command
         ];
 
         // 1. Run Scrapers
-        foreach ($scrapers as $scraper) {
-            $this->info('──────────────────────────────────────────');
-            $this->info("▶ Running Scraper: {$scraper['label']}");
-            $this->info('──────────────────────────────────────────');
+        if (!$m3uOnly) {
+            foreach ($scrapers as $scraper) {
+                $this->info('──────────────────────────────────────────');
+                $this->info("▶ Running Scraper: {$scraper['label']}");
+                $this->info('──────────────────────────────────────────');
 
-            try {
-                $exitCode = Artisan::call($scraper['command'], $scraper['args']);
-                $output = Artisan::output();
-                $this->line(trim($output));
+                try {
+                    $exitCode = Artisan::call($scraper['command'], $scraper['args']);
+                    $output = Artisan::output();
+                    $this->line(trim($output));
 
-                if ($exitCode === 0) {
-                    $this->info("✓ {$scraper['label']} completed successfully.");
-                } else {
-                    $this->warn("⚠ {$scraper['label']} finished with exit code {$exitCode}.");
+                    if ($exitCode === 0) {
+                        $this->info("✓ {$scraper['label']} completed successfully.");
+                    } else {
+                        $this->warn("⚠ {$scraper['label']} finished with exit code {$exitCode}.");
+                    }
+                } catch (\Exception $e) {
+                    $this->error("✗ {$scraper['label']} failed: " . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                $this->error("✗ {$scraper['label']} failed: " . $e->getMessage());
+                $this->line('');
             }
-            $this->line('');
         }
 
         // 2. Run M3U Playlists
-        $m3uUrls = [
-            'Roar Zone Playlist'   => 'https://raw.githubusercontent.com/abusaeeidx/BDxTV/refs/heads/main/roar-zone-playlist.m3u',
-            'CricHD Playlist'      => 'https://raw.githubusercontent.com/abusaeeidx/IPTV-Scraper-Zilla/refs/heads/main/CricHD.m3u',
-            'BD Playlist'          => 'https://raw.githubusercontent.com/abusaeeidx/IPTV-Scraper-Zilla/refs/heads/main/BD.m3u',
-            'BDIX IPTV Playlist'   => 'https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/refs/heads/main/playlist.m3u',
-        ];
+        if (!$scrapersOnly) {
+            $m3uUrls = [
+                'Roar Zone Playlist'   => 'https://raw.githubusercontent.com/abusaeeidx/BDxTV/refs/heads/main/roar-zone-playlist.m3u',
+                'CricHD Playlist'      => 'https://raw.githubusercontent.com/abusaeeidx/IPTV-Scraper-Zilla/refs/heads/main/CricHD.m3u',
+                'BD Playlist'          => 'https://raw.githubusercontent.com/abusaeeidx/IPTV-Scraper-Zilla/refs/heads/main/BD.m3u',
+                'BDIX IPTV Playlist'   => 'https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/refs/heads/main/playlist.m3u',
+            ];
 
-        foreach ($m3uUrls as $name => $url) {
-            $this->info('──────────────────────────────────────────');
-            $this->info("▶ Syncing M3U: {$name}");
-            $this->info("Source: {$url}");
-            $this->info('──────────────────────────────────────────');
+            foreach ($m3uUrls as $name => $url) {
+                $this->info('──────────────────────────────────────────');
+                $this->info("▶ Syncing M3U: {$name}");
+                $this->info("Source: {$url}");
+                $this->info('──────────────────────────────────────────');
 
-            try {
-                $exitCode = Artisan::call('m3u:sync', array_merge(['url' => $url], $args));
-                $output = Artisan::output();
-                $this->line(trim($output));
+                try {
+                    $exitCode = Artisan::call('m3u:sync', array_merge(['url' => $url], $args));
+                    $output = Artisan::output();
+                    $this->line(trim($output));
 
-                if ($exitCode === 0) {
-                    $this->info("✓ M3U {$name} synced successfully.");
-                } else {
-                    $this->warn("⚠ M3U {$name} finished with exit code {$exitCode}.");
+                    if ($exitCode === 0) {
+                        $this->info("✓ M3U {$name} synced successfully.");
+                    } else {
+                        $this->warn("⚠ M3U {$name} finished with exit code {$exitCode}.");
+                    }
+                } catch (\Exception $e) {
+                    $this->error("✗ M3U {$name} failed: " . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                $this->error("✗ M3U {$name} failed: " . $e->getMessage());
+                $this->line('');
             }
-            $this->line('');
         }
 
         $this->info('==========================================');

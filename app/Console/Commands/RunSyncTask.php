@@ -85,6 +85,14 @@ class RunSyncTask extends Command
         } elseif ($task->type === 'tv-channels') {
             $cmd[] = 'sync:tv-channels';
             if ($withReview) $cmd[] = '--review';
+        } elseif ($task->type === 'tv-channels-scrapers') {
+            $cmd[] = 'sync:tv-channels';
+            $cmd[] = '--scrapers-only';
+            if ($withReview) $cmd[] = '--review';
+        } elseif ($task->type === 'tv-channels-m3u') {
+            $cmd[] = 'sync:tv-channels';
+            $cmd[] = '--m3u-only';
+            if ($withReview) $cmd[] = '--review';
         } elseif ($task->type === 'full-maintenance') {
             $cmd[] = 'maintenance:full';
         } else {
