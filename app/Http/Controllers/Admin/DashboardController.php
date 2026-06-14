@@ -425,6 +425,7 @@ class DashboardController extends Controller
         }
 
         $channels = $data['channels'] ?? $data;
+        
         if (!is_array($channels)) {
             throw new \Exception('JSON does not contain a channels array.');
         }
@@ -436,10 +437,10 @@ class DashboardController extends Controller
     
             $name = trim($ch['name'] ?? '');
             $url  = $ch['url'] ?? '';
-            // if (empty($name) || empty($url)) {
-            //     $skipped++;
-            //     continue;
-            // }
+            if (empty($name) || empty($url)) {
+                $skipped++;
+                continue;
+            }
 
             $logoPath = $ch['logo'] ?? '';
             $logoUrl  = '';

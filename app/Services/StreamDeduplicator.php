@@ -46,7 +46,7 @@ class StreamDeduplicator
         // Split name into words
         $words = preg_split('/[^a-z0-9]+/', $name, -1, PREG_SPLIT_NO_EMPTY);
         
-        $noise = ['hd', 'sd', 'fhd', 'uhd', '4k', 'live', 'tv', 'channel', 'bengali', 'bangla', 'english', 'hindi', 'nepal', 'pakistan', 'india', 'asia', 'online', 'scr', 'stream', 'iptv'];
+        $noise = ['hd', 'sd', 'fhd', 'uhd', '4k', 'live', 'tv', 'channel', 'bengali', 'bangla', 'english', 'hindi', 'nepal', 'pakistan', 'india', 'asia', 'online', 'scr', 'stream', 'iptv', 'sport', 'sports'];
         
         $filteredWords = [];
         foreach ($words as $word) {
@@ -277,6 +277,11 @@ class StreamDeduplicator
         $stream->categories()->syncWithoutDetaching([$category->id]);
 
         // 4. Attach StreamServer
+        // Clean up any old, incorrectly matched stream server entries for this URL on other streams
+        StreamServer::where('url', $srvUrl)
+            ->where('stream_id', '!=', $stream->id)
+            ->delete();
+
         $server = StreamServer::where('stream_id', $stream->id)
             ->where('url', $srvUrl)
             ->first();
