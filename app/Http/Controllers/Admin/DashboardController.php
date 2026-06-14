@@ -440,10 +440,10 @@ class DashboardController extends Controller
 
             $name = trim($ch['name'] ?? '');
             $url  = $ch['url'] ?? '';
-            if (empty($name) || empty($url)) {
-                $skipped++;
-                continue;
-            }
+            // if (empty($name) || empty($url)) {
+            //     $skipped++;
+            //     continue;
+            // }
 
             $logoPath = $ch['logo'] ?? '';
             $logoUrl  = '';
