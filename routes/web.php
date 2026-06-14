@@ -30,58 +30,7 @@ Route::get('/cron/sync-m3u', [ApiController::class, 'runM3uCron'])->name('cron.s
 
 
 Route::get('/', function () {
-    return redirect()->away('https://livetvbd-delta.vercel.app/');
-
-    $now = Carbon::now();
-
-    // Fetch active banners recursively attaching stream details
-    $banners = PromoBanner::with([
-        'stream1' => function ($q) {
-            $q->where('is_active', true)->with('servers');
-        },
-        'stream2' => function ($q) {
-            $q->where('is_active', true)->with('servers');
-        },
-        'stream3' => function ($q) {
-            $q->where('is_active', true)->with('servers');
-        }
-    ])
-        ->where('is_active', true)
-        ->orderBy('order')
-        ->orderBy('id', 'desc')
-        ->get();
-
-    // Fetch active and upcoming live events
-    $liveEvents = Stream::where('show_in_events', true)
-        ->where('is_active', true)
-        ->where(function ($query) use ($now) {
-            $query->where('is_permanent', true)
-                ->orWhere('expire_time', '>', $now);
-        })
-        ->with([
-            'servers' => function ($query) {
-                $query->orderBy('order');
-            }
-        ])
-        ->orderBy('start_time', 'asc')
-        ->get();
-
-    // Fetch categories with their active TV channels
-    $categories = Category::with([
-        'streams' => function ($query) use ($now) {
-            $query->where('show_in_tv', true)
-                ->where('is_active', true)
-                ->where(function ($q) use ($now) {
-                    $q->where('is_permanent', true)
-                        ->orWhere('expire_time', '>', $now);
-                })
-                ->orderBy('name');
-        }
-    ])->orderBy('order')->get();
-
-    $settings = \App\Models\AppSetting::first();
-
-    return view('welcome', compact('banners', 'liveEvents', 'categories', 'settings'));
+    return response()->file(public_path('app/index.html'));
 })->name('home');
 
 /*
@@ -152,3 +101,12 @@ Route::middleware(['admin.auth'])->prefix('admin')->name('admin.')->group(functi
     Route::post('review-queue/reject-all', [PendingStreamController::class, 'rejectAll'])->name('review-queue.reject-all');
     Route::post('review-queue/approve-all', [PendingStreamController::class, 'approveAll'])->name('review-queue.approve-all');
 });
+
+/*
+|--------------------------------------------------------------------------
+| React SPA Catch-All (must be last)
+|--------------------------------------------------------------------------
+*/
+Route::get('/{any}', function () {
+    return response()->file(public_path('app/index.html'));
+})->where('any', '^(?!api|admin|cron|download_apk).*$')->name('spa');
